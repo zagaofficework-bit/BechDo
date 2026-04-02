@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import "tailwindcss";
+
+/* Ocean Blue Palette - Updated */
+:root {
+  /* CSS HEX */
+  --deep-twilight: #03045eff;
+  --bright-teal-blue: #0077b6ff;
+  --turquoise-surf: #00b4d8ff;
+  --frosted-blue: #90e0efff;
+  --light-cyan: #caf0f8ff;
+
+  /* CSS HSL */
+  --deep-twilight-hsl: hsla(239, 94%, 19%, 1);
+  --bright-teal-blue-hsl: hsla(201, 100%, 36%, 1);
+  --turquoise-surf-hsl: hsla(190, 100%, 42%, 1);
+  --frosted-blue-hsl: hsla(189, 75%, 75%, 1);
+  --light-cyan-hsl: hsla(190, 77%, 88%, 1);
+
+  /* Gradients */
+  --gradient-top: linear-gradient(0deg, #03045eff, #0077b6ff, #00b4d8ff, #90e0efff, #caf0f8ff);
+  --gradient-right: linear-gradient(90deg, #03045eff, #0077b6ff, #00b4d8ff, #90e0efff, #caf0f8ff);
+  --gradient-bottom: linear-gradient(180deg, #03045eff, #0077b6ff, #00b4d8ff, #90e0efff, #caf0f8ff);
+  --gradient-left: linear-gradient(270deg, #03045eff, #0077b6ff, #00b4d8ff, #90e0efff, #caf0f8ff);
+  --gradient-top-right: linear-gradient(45deg, #03045eff, #0077b6ff, #00b4d8ff, #90e0efff, #caf0f8ff);
+  --gradient-bottom-right: linear-gradient(135deg, #03045eff, #0077b6ff, #00b4d8ff, #90e0efff, #caf0f8ff);
+  --gradient-top-left: linear-gradient(225deg, #03045eff, #0077b6ff, #00b4d8ff, #90e0efff, #caf0f8ff);
+  --gradient-bottom-left: linear-gradient(315deg, #03045eff, #0077b6ff, #00b4d8ff, #90e0efff, #caf0f8ff);
+  --gradient-radial: radial-gradient(#03045eff, #0077b6ff, #00b4d8ff, #90e0efff, #caf0f8ff);
+}
+
+@theme {
+  --font-sans: "Outfit", sans-serif;
+  --color-white: #ffffff;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    background-color: #ffffff;
+    color: #03045e;
+    font-family: "Outfit", sans-serif !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    font-family: "Outfit", sans-serif !important;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font-family: "Outfit", sans-serif !important;
+  }
+}
