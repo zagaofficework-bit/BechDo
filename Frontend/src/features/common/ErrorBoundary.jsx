@@ -33,3 +33,40 @@ export default class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+export function RouteErrorBoundary({ children, fallbackPath = "/" }) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <div style={{
+          minHeight: "60vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 12,
+          fontFamily: "sans-serif"
+        }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1e293b" }}>
+            Something went wrong
+          </h2>
+          <p style={{ color: "#94a3b8", fontSize: 14 }}>
+            This section crashed. Rest of the app is fine.
+          </p>
+          <a href={fallbackPath} style={{
+            padding: "8px 20px",
+            background: "#1132d4",
+            color: "#fff",
+            borderRadius: 10,
+            fontSize: 14,
+            textDecoration: "none"
+          }}>
+            Go Back
+          </a>
+        </div>
+      }
+    >
+      {children}
+    </ErrorBoundary>
+  );
+}

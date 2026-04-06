@@ -3,9 +3,12 @@ import {
   useAdminSellers,
   useAdminOrders,
   useSellerControls,
-} from "../../hooks/useAdmin";
+} from "../../../hooks/useAdmin";
 import { io as socketIO } from "socket.io-client";
-import BackButton from "../common/BackButton";
+import BackButton from "../../common/BackButton";
+import Avatar from "../components/common/Avatar";
+import StatusBadge from "../components/common/StatusBadge";
+import PlanBadge from "../components/common/PlanBadge";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const BASE_URL   = import.meta.env.VITE_API_URL   || "http://localhost:3000/api";
@@ -143,43 +146,6 @@ const STATUS_CFG = {
   cancelled: { color: "text-slate-500",   bg: "bg-slate-100",   border: "border-slate-200",   dot: "bg-slate-400",   label: "Cancelled" },
   completed: { color: "text-emerald-700", bg: "bg-emerald-50",  border: "border-emerald-200", dot: "bg-emerald-500", label: "Completed" },
   refunded:  { color: "text-slate-500",   bg: "bg-slate-100",   border: "border-slate-200",   dot: "bg-slate-400",   label: "Refunded"  },
-};
-
-// ─── Shared atoms ─────────────────────────────────────────────────────────────
-const Avatar = ({ name, size = 10 }) => {
-  const initials = (name || "??").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
-  const hue      = ((name?.charCodeAt(0) ?? 0) * 15) % 360;
-  const px       = size * 4;
-  return (
-    <div
-      className="rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
-      style={{ width: px, height: px, minWidth: px, minHeight: px,
-        background: `hsl(${hue},55%,90%)`, color: `hsl(${hue},55%,35%)`,
-        border: `2px solid hsl(${hue},45%,78%)` }}
-    >
-      {initials}
-    </div>
-  );
-};
-
-const StatusBadge = ({ status }) => {
-  const cfg = STATUS_CFG[status] || STATUS_CFG.active;
-  return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border whitespace-nowrap ${cfg.bg} ${cfg.border} ${cfg.color}`}>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dot}`} />
-      {cfg.label}
-    </span>
-  );
-};
-
-const PlanBadge = ({ plan }) => {
-  const key = plan?.toLowerCase() ?? "—";
-  const cfg = PLAN_CFG[key] || PLAN_CFG["—"];
-  return (
-    <span className={`inline-flex items-center text-xs font-extrabold px-2.5 py-1 rounded-full border capitalize ${cfg.bg} ${cfg.border} ${cfg.color}`}>
-      {plan || "—"}
-    </span>
-  );
 };
 
 const SkeletonRow = ({ cols = 7 }) => (

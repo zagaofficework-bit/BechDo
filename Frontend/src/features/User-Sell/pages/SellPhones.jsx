@@ -16,13 +16,19 @@ import { useSellFlow } from "../../../context/sellflow.context";
 
 // Brand logo map — add more as needed
 const BRAND_LOGOS = {
-  Apple:   "./assets/img/AppleLogo.png",
-  Samsung: "./assets/img/SamsungLogo.png",
-  Xiaomi:  "./assets/img/XiaomiLogo.png",
-  Vivo:    "./assets/img/VivoLogo.png",
-  Oppo:    "./assets/img/OppoLogo.png",
-  OnePlus: "./assets/img/OnePlusLogo.png",
-  Realme:  "./assets/img/RealmeLogo.png",
+  Apple:   "./assets/devicesicons/Apple.png",
+  Samsung: "./assets/devicesicons/samsung.png",
+  Xiaomi:  "./assets/devicesicons/Xiaomi.png",
+  Vivo:    "./assets/devicesicons/Vivo.png",
+  Oppo:    "./assets/devicesicons/Oppo.png",
+  OnePlus: "./assets/devicesicons/OnePlus.png",
+  Realme:  "./assets/devicesicons/realme-seeklogo.png",
+  Poco:    "./assets/devicesicons/Poco.png",
+  Google:  "./assets/devicesicons/Google.png",
+  Motorola:  "./assets/devicesicons/Motorola.png",
+  Nokia:     "./assets/devicesicons/Nokia.png",
+  Sony:      "./assets/devicesicons/Sony.png",
+  Nothing :  "./assets/devicesicons/Nothing.webp",
 };
 
 const CATEGORY = "mobile"; // change to "laptop" | "tablet" etc. per page
@@ -55,7 +61,8 @@ export default function SellPhones() {
       <SellCard
         title="Sell Old Mobile Phone for Instant Cash"
         brands={brands}
-        brandsLoading={loading}
+        brandLogos={BRAND_LOGOS}
+        brandsLoading ={loading}
         brandsError={error}
         onBrandClick={handleBrandClick}
       />

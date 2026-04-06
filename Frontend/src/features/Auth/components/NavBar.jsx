@@ -5,6 +5,7 @@ import { useSubscriptionContext } from "../../../context/subscription.context";
 import { PiCrown } from "react-icons/pi";
 import { MdAdminPanelSettings } from "react-icons/md";
 import NavMenu from "./NavMenu";
+import toast from "react-hot-toast";
 
 const BASE_URL = import.meta.env.VITE_API_URI || "http://localhost:3000";
 

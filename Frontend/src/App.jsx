@@ -34,6 +34,7 @@ import { Toaster } from "react-hot-toast";
 import AboutPage from "./features/common/About";
 import Blog from "./features/common/Blog";
 import Support from "./features/common/Support";
+import { RouteErrorBoundary } from "./features/common/ErrorBoundary";
 
 // ─── Lazy-loaded pages ─────────────────────────────────────────────────────────
 const Home = lazy(() => import("./features/Auth/pages/Home"));
@@ -43,7 +44,7 @@ const OtpGeneration = lazy(() => import("./features/Auth/pages/OtpGeneration"));
 const SubscriptionFlow = lazy(
   () => import("./features/SellerDashboard/SubscriptionFlow"),
 );
-const AdminDashboard = lazy(() => import("./features/Admin/Admindashboard"));
+const AdminDashboard = lazy(() => import("./features/Admin/pages/Admindashboard"));
 const SellerDashboard = lazy(
   () => import("./features/SellerDashboard/Sellerdashboard"),
 );
@@ -145,9 +146,11 @@ export default function App() {
                       path="/admin-dashboard"
                       element={
                         <AdminRoute>
-                          <BareLayout>
-                            <AdminDashboard />
-                          </BareLayout>
+                          <RouteErrorBoundary fallbackPath="/">
+                            <BareLayout>
+                              <AdminDashboard />
+                            </BareLayout>
+                          </RouteErrorBoundary>
                         </AdminRoute>
                       }
                     />
@@ -157,9 +160,11 @@ export default function App() {
                       path="/seller-dashboard"
                       element={
                         <SellerRoute>
-                          <BareLayout>
-                            <SellerDashboard />
-                          </BareLayout>
+                          <RouteErrorBoundary fallbackPath="/">
+                            <BareLayout>
+                              <SellerDashboard />
+                            </BareLayout>
+                          </RouteErrorBoundary>
                         </SellerRoute>
                       }
                     />
@@ -315,8 +320,8 @@ export default function App() {
                       path="/support"
                       element={
                         <MainLayout>
-                          <Support/>
-                          </MainLayout>
+                          <Support />
+                        </MainLayout>
                       }
                     />
 
@@ -324,18 +329,19 @@ export default function App() {
                       path="/blog"
                       element={
                         <MainLayout>
-                          <Blog/>
-                          </MainLayout>
+                          <Blog />
+                        </MainLayout>
                       }
                     />
 
                     <Route
-                    path="/about"
-                    element={
-                      <MainLayout>
-                        <AboutPage/>
-                      </MainLayout>
-                    }/>
+                      path="/about"
+                      element={
+                        <MainLayout>
+                          <AboutPage />
+                        </MainLayout>
+                      }
+                    />
 
                     <Route
                       path="/sell/*"

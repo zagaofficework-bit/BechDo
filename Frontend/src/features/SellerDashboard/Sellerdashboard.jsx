@@ -1987,13 +1987,6 @@ const DeviceListingsSection = ({ isSuperSeller }) => {
     return Array.from(map.values());
   };
 
-  useEffect(() => {
-  console.log(
-    "ACCEPTED IDS:",
-    managedListings.map(l => l._id)
-  );
-}, [managedListings]);
-
   const fetchAvailable = useCallback(async (cat, pg) => {
     try {
       const res = await getListings({
