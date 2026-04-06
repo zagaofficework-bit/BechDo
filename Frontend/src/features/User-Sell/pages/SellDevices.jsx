@@ -85,7 +85,7 @@ export default function SellDevices({ models = [], brand, category, loading = fa
                   onClick={() => handleSelect(model)}
                   className="sd-model-card flex flex-col items-center bg-white rounded-lg shadow p-4 hover:shadow-md cursor-pointer transition"
                 >
-                  <div className="sd-model-img w-20 h-32 flex items-center justify-center mb-2">
+                  <div className="sd-model-img w-45 h-35 flex items-center justify-center mb-2">
                     {model.image ? (
                       <img src={model.image} alt={model.name} className="object-contain h-full" loading="lazy" onError={(e) => { e.target.onerror = null; e.target.src = "/fallback-device.png"; }} />
                     ) : (

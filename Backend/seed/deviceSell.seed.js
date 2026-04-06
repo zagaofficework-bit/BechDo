@@ -989,11 +989,269 @@ function buildModels(imageMap, brand, specMap = {}) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const evaluationConfigSeed = [
-  { category: "mobile", processingFee: 200, questions: [{ key: "device_turns_on", label: "Does the device turn on and boot normally?", order: 1, deductionOnNo: 50 }, { key: "touch_working", label: "Is the touchscreen responsive and working?", order: 2, deductionOnNo: 25 }, { key: "can_make_calls", label: "Can the device make and receive calls?", order: 3, deductionOnNo: 20 }, { key: "wifi_working", label: "Is Wi-Fi connecting and working properly?", order: 4, deductionOnNo: 10 }, { key: "fingerprint", label: "Is the fingerprint / Face ID working?", order: 5, deductionOnNo: 5 }], defects: [{ key: "screen_damage", label: "Screen / Display Damage", image: IMG.mobile_screen_cracked, order: 1, deduction: 0, children: [{ key: "screen_cracked", label: "Screen cracked or shattered", image: IMG.mobile_screen_cracked, deduction: 40 }, { key: "dead_pixels", label: "Dead pixels or display lines", image: IMG.mobile_dead_pixels, deduction: 20 }, { key: "touch_unresponsive", label: "Touchscreen partially unresponsive", image: IMG.mobile_touch, deduction: 30 }, { key: "display_lines", label: "Horizontal or vertical lines on screen", image: IMG.mobile_display_lines, deduction: 20 }, { key: "burn_in", label: "Screen burn-in or ghost image", image: IMG.mobile_burn_in, deduction: 20 }] }, { key: "body_damage", label: "Body / Frame Damage", image: IMG.mobile_body_dents, order: 2, deduction: 0, children: [{ key: "back_cracked", label: "Back panel cracked", image: IMG.mobile_back_cracked, deduction: 15 }, { key: "body_dents", label: "Significant dents on frame", image: IMG.mobile_body_dents, deduction: 10 }, { key: "body_scratches", label: "Deep scratches on body", image: IMG.mobile_body_scratches, deduction: 5 }, { key: "frame_bent", label: "Frame or chassis bent", image: IMG.mobile_frame_bent, deduction: 20 }] }, { key: "camera_damage", label: "Camera Issues", image: IMG.mobile_camera_broken, order: 3, deduction: 0, children: [{ key: "camera_glass_broken", label: "Camera lens cracked or broken", image: IMG.mobile_camera_broken, deduction: 15 }, { key: "camera_not_working", label: "Rear camera not working at all", image: IMG.mobile_camera_notworking, deduction: 25 }, { key: "front_camera_issue", label: "Front camera not working", image: IMG.mobile_front_camera, deduction: 15 }] }, { key: "hardware_issues", label: "Hardware / Functional Issues", image: IMG.mobile_charging_port, order: 4, deduction: 0, children: [{ key: "charging_port_damaged", label: "Charging port damaged or loose", image: IMG.mobile_charging_port, deduction: 15 }, { key: "speaker_issue", label: "Speaker not working or muffled", image: IMG.mobile_speaker, deduction: 10 }, { key: "microphone_issue", label: "Microphone not working", image: IMG.mobile_microphone, deduction: 10 }, { key: "battery_drains_fast", label: "Battery drains very fast", image: IMG.mobile_battery, deduction: 15 }, { key: "water_damage", label: "Water or liquid damage", image: IMG.mobile_water, deduction: 45 }, { key: "overheating", label: "Device overheats frequently", image: IMG.mobile_overheating, deduction: 15 }, { key: "wifi_issue", label: "Wi-Fi or network issues", image: IMG.mobile_wifi_issue, deduction: 10 }, { key: "fingerprint_issue", label: "Fingerprint / Face ID not working", image: IMG.mobile_fingerprint, deduction: 10 }] }], accessories: [{ key: "original_box", label: "Original box included", image: IMG.acc_box, order: 1, addition: 2 }, { key: "original_charger", label: "Original charger included", image: IMG.acc_charger, order: 2, addition: 3 }, { key: "bill_invoice", label: "Original purchase bill/invoice", image: IMG.acc_invoice, order: 3, addition: 2 }, { key: "earphones", label: "Original earphones included", image: IMG.acc_earphones, order: 4, addition: 1 }] },
-  { category: "laptop", processingFee: 500, questions: [{ key: "powers_on", label: "Does the laptop power on normally?", order: 1, deductionOnNo: 60 }, { key: "display_working", label: "Is the display working without lines or patches?", order: 2, deductionOnNo: 30 }, { key: "keyboard_working", label: "Are all keyboard keys functioning properly?", order: 3, deductionOnNo: 15 }, { key: "wifi_working", label: "Is Wi-Fi connecting and working properly?", order: 4, deductionOnNo: 10 }, { key: "battery_charges", label: "Does the battery charge normally?", order: 5, deductionOnNo: 20 }], defects: [{ key: "display_damage", label: "Display Damage", image: IMG.laptop_screen_cracked, order: 1, deduction: 0, children: [{ key: "screen_cracked", label: "Screen cracked or broken", image: IMG.laptop_screen_cracked, deduction: 50 }, { key: "dead_pixels", label: "Dead pixels or lines on screen", image: IMG.laptop_dead_pixels, deduction: 25 }, { key: "display_lines", label: "Horizontal or vertical lines", image: IMG.laptop_display_lines, deduction: 20 }, { key: "backlight_issue", label: "Backlight bleeding or dim display", image: IMG.laptop_backlight, deduction: 20 }, { key: "discoloration", label: "Screen discoloration or staining", image: IMG.laptop_discoloration, deduction: 15 }] }, { key: "keyboard_trackpad", label: "Keyboard / Trackpad Issues", image: IMG.laptop_keyboard, order: 2, deduction: 0, children: [{ key: "keys_not_working", label: "Multiple keys not registering", image: IMG.laptop_keyboard, deduction: 20 }, { key: "trackpad_unresponsive", label: "Trackpad not working", image: IMG.laptop_trackpad, deduction: 15 }] }, { key: "body_damage", label: "Body / Chassis Damage", image: IMG.laptop_hinge, order: 3, deduction: 0, children: [{ key: "hinge_broken", label: "Hinge damaged or broken", image: IMG.laptop_hinge, deduction: 25 }, { key: "body_cracks", label: "Cracks on chassis or lid", image: IMG.laptop_body_cracks, deduction: 15 }, { key: "body_dents", label: "Dents on body", image: IMG.laptop_body_dents, deduction: 5 }, { key: "port_damage", label: "USB / HDMI ports damaged", image: IMG.laptop_port_damage, deduction: 10 }] }, { key: "hardware_issues", label: "Hardware / Component Issues", image: IMG.laptop_battery, order: 4, deduction: 0, children: [{ key: "battery_issue", label: "Battery not charging or dead", image: IMG.laptop_battery, deduction: 30 }, { key: "fan_not_working", label: "Fan not working or excessive noise", image: IMG.laptop_fan, deduction: 15 }, { key: "liquid_damage", label: "Liquid damage inside", image: IMG.laptop_liquid, deduction: 60 }, { key: "ram_issue", label: "RAM failure or memory errors", image: IMG.laptop_ram, deduction: 25 }, { key: "storage_issue", label: "Storage / SSD not detected", image: IMG.laptop_storage, deduction: 30 }] }], accessories: [{ key: "original_charger", label: "Original charger/adapter", image: IMG.acc_charger, order: 1, addition: 5 }, { key: "original_box", label: "Original box included", image: IMG.acc_box, order: 2, addition: 2 }, { key: "bill_invoice", label: "Original purchase bill/invoice", image: IMG.acc_invoice, order: 3, addition: 2 }, { key: "mouse", label: "Mouse included", image: IMG.acc_mouse, order: 4, addition: 1 }, { key: "keyboard_acc", label: "External keyboard included", image: IMG.acc_keyboard, order: 5, addition: 1 }] },
-  { category: "tablet", processingFee: 300, questions: [{ key: "device_turns_on", label: "Does the tablet turn on normally?", order: 1, deductionOnNo: 50 }, { key: "touch_working", label: "Is the touchscreen working perfectly?", order: 2, deductionOnNo: 25 }, { key: "wifi_working", label: "Is Wi-Fi working properly?", order: 3, deductionOnNo: 15 }, { key: "camera_working", label: "Is the camera working correctly?", order: 4, deductionOnNo: 10 }, { key: "battery_charges", label: "Does the battery charge normally?", order: 5, deductionOnNo: 20 }], defects: [{ key: "screen_damage", label: "Screen / Display Damage", image: IMG.tablet_screen_cracked, order: 1, deduction: 0, children: [{ key: "screen_cracked", label: "Screen cracked or shattered", image: IMG.tablet_screen_cracked, deduction: 45 }, { key: "touch_unresponsive", label: "Touchscreen unresponsive", image: IMG.tablet_touch, deduction: 30 }, { key: "dead_pixels", label: "Dead pixels on display", image: IMG.tablet_dead_pixels, deduction: 20 }, { key: "display_lines", label: "Lines or patches on screen", image: IMG.tablet_display_lines, deduction: 20 }] }, { key: "body_damage", label: "Body / Frame Damage", image: IMG.tablet_back_cracked, order: 2, deduction: 0, children: [{ key: "back_cracked", label: "Back panel cracked", image: IMG.tablet_back_cracked, deduction: 15 }, { key: "body_dents", label: "Dents on frame", image: IMG.tablet_body_dents, deduction: 10 }, { key: "body_scratches", label: "Deep scratches on body", image: IMG.tablet_body_scratches, deduction: 5 }] }, { key: "camera_damage", label: "Camera Issues", image: IMG.tablet_camera, order: 3, deduction: 0, children: [{ key: "camera_not_working", label: "Camera not working", image: IMG.tablet_camera, deduction: 20 }, { key: "camera_lens_broken", label: "Camera lens cracked/broken", image: IMG.tablet_camera, deduction: 15 }] }, { key: "hardware_issues", label: "Hardware / Functional Issues", image: IMG.tablet_battery, order: 4, deduction: 0, children: [{ key: "charging_port_issue", label: "Charging port damaged", image: IMG.tablet_charging_port, deduction: 15 }, { key: "battery_issue", label: "Battery not holding charge", image: IMG.tablet_battery, deduction: 20 }, { key: "speaker_issue", label: "Speaker not working", image: IMG.tablet_speaker, deduction: 10 }, { key: "water_damage", label: "Water or liquid damage", image: IMG.tablet_water, deduction: 40 }] }], accessories: [{ key: "original_box", label: "Original box included", image: IMG.acc_box, order: 1, addition: 2 }, { key: "original_charger", label: "Original charger/cable", image: IMG.acc_charger, order: 2, addition: 3 }, { key: "bill_invoice", label: "Original purchase bill/invoice", image: IMG.acc_invoice, order: 3, addition: 2 }, { key: "stylus", label: "Stylus / Apple Pencil included", image: IMG.acc_stylus, order: 4, addition: 5 }, { key: "keyboard_acc", label: "Keyboard cover included", image: IMG.acc_keyboard, order: 5, addition: 3 }] },
-  { category: "smartwatch", processingFee: 150, questions: [{ key: "device_turns_on", label: "Does the watch turn on normally?", order: 1, deductionOnNo: 60 }, { key: "touch_working", label: "Is the touchscreen responding correctly?", order: 2, deductionOnNo: 25 }, { key: "battery_good", label: "Does battery last a full day?", order: 3, deductionOnNo: 20 }, { key: "sensors_working", label: "Are health sensors (heart rate etc.) working?", order: 4, deductionOnNo: 15 }], defects: [{ key: "screen_damage", label: "Screen / Display Damage", image: IMG.watch_screen_cracked, order: 1, deduction: 0, children: [{ key: "screen_cracked", label: "Screen cracked or shattered", image: IMG.watch_screen_cracked, deduction: 50 }, { key: "dead_pixels", label: "Dead pixels on display", image: IMG.watch_dead_pixels, deduction: 25 }, { key: "touch_unresponsive", label: "Touch unresponsive", image: IMG.watch_touch_issue, deduction: 20 }] }, { key: "body_damage", label: "Body / Casing Damage", image: IMG.watch_body_scratches, order: 2, deduction: 0, children: [{ key: "body_scratches", label: "Deep scratches on case", image: IMG.watch_body_scratches, deduction: 10 }, { key: "body_dents", label: "Dents on case", image: IMG.watch_body_dents, deduction: 10 }, { key: "crown_damaged", label: "Digital crown/buttons damaged", image: IMG.watch_crown, deduction: 15 }, { key: "strap_damaged", label: "Strap broken or damaged", image: IMG.watch_strap_damaged, deduction: 5 }] }, { key: "hardware_issues", label: "Hardware / Functional Issues", image: IMG.watch_battery, order: 3, deduction: 0, children: [{ key: "battery_issue", label: "Battery not holding charge", image: IMG.watch_battery, deduction: 25 }, { key: "charging_issue", label: "Charging not working", image: IMG.watch_charging, deduction: 20 }, { key: "sensor_issue", label: "Health sensors not working", image: IMG.watch_sensor, deduction: 20 }, { key: "water_damage", label: "Water damage", image: IMG.watch_water, deduction: 40 }] }], accessories: [{ key: "original_box", label: "Original box included", image: IMG.acc_box, order: 1, addition: 3 }, { key: "original_charger", label: "Original charger", image: IMG.acc_charger, order: 2, addition: 4 }, { key: "extra_strap", label: "Extra strap included", image: IMG.acc_strap, order: 3, addition: 2 }] },
-  { category: "television", processingFee: 800, questions: [{ key: "powers_on", label: "Does the TV power on and off normally?", order: 1, deductionOnNo: 70 }, { key: "display_uniform", label: "Is the display uniform with no patches?", order: 2, deductionOnNo: 40 }, { key: "remote_working", label: "Is the original remote control working?", order: 3, deductionOnNo: 10 }, { key: "hdmi_working", label: "Are HDMI ports working properly?", order: 4, deductionOnNo: 15 }, { key: "smart_tv_working", label: "Is Smart TV / internet working?", order: 5, deductionOnNo: 10 }], defects: [{ key: "panel_damage", label: "Panel / Screen Damage", image: IMG.tv_panel_cracked, order: 1, deduction: 0, children: [{ key: "panel_cracked", label: "Panel cracked or physically broken", image: IMG.tv_panel_cracked, deduction: 80 }, { key: "panel_lines", label: "Horizontal or vertical lines", image: IMG.tv_panel_lines, deduction: 35 }, { key: "dead_pixels", label: "Dead pixels or dark patches", image: IMG.tv_dead_pixels, deduction: 25 }, { key: "burn_in", label: "Screen burn-in or ghost image", image: IMG.tv_burn_in, deduction: 40 }, { key: "discoloration", label: "Screen discoloration or colour shift", image: IMG.tv_discoloration, deduction: 20 }] }, { key: "body_damage", label: "Body / Casing Damage", image: IMG.tv_bezel_cracked, order: 2, deduction: 0, children: [{ key: "bezel_cracked", label: "Bezel/frame cracked", image: IMG.tv_bezel_cracked, deduction: 15 }, { key: "stand_broken", label: "Stand/legs broken or missing", image: IMG.tv_stand_broken, deduction: 15 }] }, { key: "hardware_issues", label: "Hardware / Functional Issues", image: IMG.tv_power, order: 3, deduction: 0, children: [{ key: "speaker_issue", label: "Speaker not working or distorted", image: IMG.tv_speaker, deduction: 15 }, { key: "hdmi_port_issue", label: "HDMI ports not working", image: IMG.tv_hdmi, deduction: 15 }, { key: "usb_port_issue", label: "USB ports not working", image: IMG.tv_usb_port, deduction: 10 }, { key: "power_issue", label: "Takes long to power on/restarts", image: IMG.tv_power, deduction: 20 }, { key: "remote_issue", label: "Remote control not working", image: IMG.tv_remote_issue, deduction: 5 }, { key: "no_signal", label: "No signal / input detection issues", image: IMG.tv_no_signal, deduction: 15 }] }], accessories: [{ key: "remote", label: "Original remote control", image: IMG.acc_remote, order: 1, addition: 3 }, { key: "original_stand", label: "Original stand/legs", image: IMG.acc_stand, order: 2, addition: 3 }, { key: "original_box", label: "Original packaging box", image: IMG.acc_box, order: 3, addition: 2 }, { key: "bill_invoice", label: "Original purchase bill/invoice", image: IMG.acc_invoice, order: 4, addition: 2 }, { key: "hdmi_cable", label: "HDMI cable included", image: IMG.acc_cable, order: 5, addition: 1 }] },
+  {
+    category: "mobile",
+    processingFee: 299,
+    questions: [
+      { key: "device_turns_on",  label: "Does the device turn on and boot normally?",       order: 1, deductionOnNo: 60 },
+      { key: "touch_working",    label: "Is the touchscreen responsive and working?",        order: 2, deductionOnNo: 30 },
+      { key: "can_make_calls",   label: "Can the device make and receive calls?",            order: 3, deductionOnNo: 25 },
+      { key: "wifi_working",     label: "Is Wi-Fi connecting and working properly?",         order: 4, deductionOnNo: 15 },
+      { key: "fingerprint",      label: "Is the fingerprint / Face ID working?",             order: 5, deductionOnNo: 8  },
+    ],
+    defects: [
+      {
+        key: "screen_damage", label: "Screen / Display Damage", image: IMG.mobile_screen_cracked, order: 1, deduction: 0,
+        children: [
+          { key: "screen_cracked",       label: "Screen cracked or shattered",              image: IMG.mobile_screen_cracked,   deduction: 45 },
+          { key: "dead_pixels",          label: "Dead pixels or display lines",             image: IMG.mobile_dead_pixels,      deduction: 25 },
+          { key: "touch_unresponsive",   label: "Touchscreen partially unresponsive",       image: IMG.mobile_touch,            deduction: 35 },
+          { key: "display_lines",        label: "Horizontal or vertical lines on screen",   image: IMG.mobile_display_lines,    deduction: 25 },
+          { key: "burn_in",              label: "Screen burn-in or ghost image",            image: IMG.mobile_burn_in,          deduction: 20 },
+        ],
+      },
+      {
+        key: "body_damage", label: "Body / Frame Damage", image: IMG.mobile_body_dents, order: 2, deduction: 0,
+        children: [
+          { key: "back_cracked",    label: "Back panel cracked",          image: IMG.mobile_back_cracked,    deduction: 15 },
+          { key: "body_dents",      label: "Significant dents on frame",  image: IMG.mobile_body_dents,      deduction: 10 },
+          { key: "body_scratches",  label: "Deep scratches on body",      image: IMG.mobile_body_scratches,  deduction: 5  },
+          { key: "frame_bent",      label: "Frame or chassis bent",       image: IMG.mobile_frame_bent,      deduction: 25 },
+        ],
+      },
+      {
+        key: "camera_damage", label: "Camera Issues", image: IMG.mobile_camera_broken, order: 3, deduction: 0,
+        children: [
+          { key: "camera_glass_broken",  label: "Camera lens cracked or broken",      image: IMG.mobile_camera_broken,      deduction: 15 },
+          { key: "camera_not_working",   label: "Rear camera not working at all",     image: IMG.mobile_camera_notworking,  deduction: 30 },
+          { key: "front_camera_issue",   label: "Front camera not working",           image: IMG.mobile_front_camera,       deduction: 15 },
+        ],
+      },
+      {
+        key: "hardware_issues", label: "Hardware / Functional Issues", image: IMG.mobile_charging_port, order: 4, deduction: 0,
+        children: [
+          { key: "charging_port_damaged",  label: "Charging port damaged or loose",    image: IMG.mobile_charging_port,  deduction: 15 },
+          { key: "speaker_issue",          label: "Speaker not working or muffled",    image: IMG.mobile_speaker,        deduction: 10 },
+          { key: "microphone_issue",       label: "Microphone not working",            image: IMG.mobile_microphone,     deduction: 10 },
+          { key: "battery_drains_fast",    label: "Battery drains very fast",          image: IMG.mobile_battery,        deduction: 20 },
+          { key: "water_damage",           label: "Water or liquid damage",            image: IMG.mobile_water,          deduction: 50 },
+          { key: "overheating",            label: "Device overheats frequently",       image: IMG.mobile_overheating,    deduction: 18 },
+          { key: "wifi_issue",             label: "Wi-Fi or network issues",           image: IMG.mobile_wifi_issue,     deduction: 12 },
+          { key: "fingerprint_issue",      label: "Fingerprint / Face ID not working", image: IMG.mobile_fingerprint,   deduction: 10 },
+        ],
+      },
+    ],
+    accessories: [
+      { key: "original_box",      label: "Original box included",             image: IMG.acc_box,       order: 1, addition: 2 },
+      { key: "original_charger",  label: "Original charger included",         image: IMG.acc_charger,   order: 2, addition: 3 },
+      { key: "bill_invoice",      label: "Original purchase bill/invoice",    image: IMG.acc_invoice,   order: 3, addition: 3 },
+      { key: "earphones",         label: "Original earphones included",       image: IMG.acc_earphones, order: 4, addition: 1 },
+    ],
+  },
+
+  {
+    category: "laptop",
+    processingFee: 599,
+    questions: [
+      { key: "powers_on",         label: "Does the laptop power on normally?",                    order: 1, deductionOnNo: 65 },
+      { key: "display_working",   label: "Is the display working without lines or patches?",      order: 2, deductionOnNo: 35 },
+      { key: "keyboard_working",  label: "Are all keyboard keys functioning properly?",           order: 3, deductionOnNo: 20 },
+      { key: "wifi_working",      label: "Is Wi-Fi connecting and working properly?",             order: 4, deductionOnNo: 12 },
+      { key: "battery_charges",   label: "Does the battery charge normally?",                     order: 5, deductionOnNo: 25 },
+    ],
+    defects: [
+      {
+        key: "display_damage", label: "Display Damage", image: IMG.laptop_screen_cracked, order: 1, deduction: 0,
+        children: [
+          { key: "screen_cracked",     label: "Screen cracked or broken",              image: IMG.laptop_screen_cracked,  deduction: 55 },
+          { key: "dead_pixels",        label: "Dead pixels or lines on screen",        image: IMG.laptop_dead_pixels,     deduction: 28 },
+          { key: "display_lines",      label: "Horizontal or vertical lines",          image: IMG.laptop_display_lines,   deduction: 25 },
+          { key: "backlight_issue",    label: "Backlight bleeding or dim display",     image: IMG.laptop_backlight,       deduction: 22 },
+          { key: "discoloration",      label: "Screen discoloration or staining",      image: IMG.laptop_discoloration,   deduction: 15 },
+        ],
+      },
+      {
+        key: "keyboard_trackpad", label: "Keyboard / Trackpad Issues", image: IMG.laptop_keyboard, order: 2, deduction: 0,
+        children: [
+          { key: "keys_not_working",       label: "Multiple keys not registering",  image: IMG.laptop_keyboard,  deduction: 22 },
+          { key: "trackpad_unresponsive",  label: "Trackpad not working",           image: IMG.laptop_trackpad,  deduction: 18 },
+        ],
+      },
+      {
+        key: "body_damage", label: "Body / Chassis Damage", image: IMG.laptop_hinge, order: 3, deduction: 0,
+        children: [
+          { key: "hinge_broken",  label: "Hinge damaged or broken",      image: IMG.laptop_hinge,        deduction: 28 },
+          { key: "body_cracks",   label: "Cracks on chassis or lid",     image: IMG.laptop_body_cracks,  deduction: 18 },
+          { key: "body_dents",    label: "Dents on body",                image: IMG.laptop_body_dents,   deduction: 8  },
+          { key: "port_damage",   label: "USB / HDMI ports damaged",     image: IMG.laptop_port_damage,  deduction: 12 },
+        ],
+      },
+      {
+        key: "hardware_issues", label: "Hardware / Component Issues", image: IMG.laptop_battery, order: 4, deduction: 0,
+        children: [
+          { key: "battery_issue",     label: "Battery not charging or dead",      image: IMG.laptop_battery,  deduction: 35 },
+          { key: "fan_not_working",   label: "Fan not working or excessive noise", image: IMG.laptop_fan,     deduction: 18 },
+          { key: "liquid_damage",     label: "Liquid damage inside",              image: IMG.laptop_liquid,   deduction: 65 },
+          { key: "ram_issue",         label: "RAM failure or memory errors",      image: IMG.laptop_ram,      deduction: 28 },
+          { key: "storage_issue",     label: "Storage / SSD not detected",        image: IMG.laptop_storage,  deduction: 35 },
+        ],
+      },
+    ],
+    accessories: [
+      { key: "original_charger",  label: "Original charger/adapter",          image: IMG.acc_charger,   order: 1, addition: 5 },
+      { key: "original_box",      label: "Original box included",             image: IMG.acc_box,       order: 2, addition: 2 },
+      { key: "bill_invoice",      label: "Original purchase bill/invoice",    image: IMG.acc_invoice,   order: 3, addition: 3 },
+      { key: "mouse",             label: "Mouse included",                    image: IMG.acc_mouse,     order: 4, addition: 2 },
+      { key: "keyboard_acc",      label: "External keyboard included",        image: IMG.acc_keyboard,  order: 5, addition: 2 },
+    ],
+  },
+
+  {
+    category: "tablet",
+    processingFee: 349,
+    questions: [
+      { key: "device_turns_on",  label: "Does the tablet turn on normally?",           order: 1, deductionOnNo: 55 },
+      { key: "touch_working",    label: "Is the touchscreen working perfectly?",        order: 2, deductionOnNo: 30 },
+      { key: "wifi_working",     label: "Is Wi-Fi working properly?",                  order: 3, deductionOnNo: 15 },
+      { key: "camera_working",   label: "Is the camera working correctly?",            order: 4, deductionOnNo: 12 },
+      { key: "battery_charges",  label: "Does the battery charge normally?",           order: 5, deductionOnNo: 22 },
+    ],
+    defects: [
+      {
+        key: "screen_damage", label: "Screen / Display Damage", image: IMG.tablet_screen_cracked, order: 1, deduction: 0,
+        children: [
+          { key: "screen_cracked",      label: "Screen cracked or shattered",       image: IMG.tablet_screen_cracked,  deduction: 48 },
+          { key: "touch_unresponsive",  label: "Touchscreen unresponsive",          image: IMG.tablet_touch,           deduction: 32 },
+          { key: "dead_pixels",         label: "Dead pixels on display",            image: IMG.tablet_dead_pixels,     deduction: 22 },
+          { key: "display_lines",       label: "Lines or patches on screen",        image: IMG.tablet_display_lines,   deduction: 22 },
+        ],
+      },
+      {
+        key: "body_damage", label: "Body / Frame Damage", image: IMG.tablet_back_cracked, order: 2, deduction: 0,
+        children: [
+          { key: "back_cracked",    label: "Back panel cracked",          image: IMG.tablet_back_cracked,    deduction: 18 },
+          { key: "body_dents",      label: "Dents on frame",              image: IMG.tablet_body_dents,      deduction: 10 },
+          { key: "body_scratches",  label: "Deep scratches on body",      image: IMG.tablet_body_scratches,  deduction: 5  },
+        ],
+      },
+      {
+        key: "camera_damage", label: "Camera Issues", image: IMG.tablet_camera, order: 3, deduction: 0,
+        children: [
+          { key: "camera_not_working",   label: "Camera not working",         image: IMG.tablet_camera, deduction: 22 },
+          { key: "camera_lens_broken",   label: "Camera lens cracked/broken", image: IMG.tablet_camera, deduction: 18 },
+        ],
+      },
+      {
+        key: "hardware_issues", label: "Hardware / Functional Issues", image: IMG.tablet_battery, order: 4, deduction: 0,
+        children: [
+          { key: "charging_port_issue",  label: "Charging port damaged",          image: IMG.tablet_charging_port,  deduction: 18 },
+          { key: "battery_issue",        label: "Battery not holding charge",     image: IMG.tablet_battery,        deduction: 25 },
+          { key: "speaker_issue",        label: "Speaker not working",            image: IMG.tablet_speaker,        deduction: 12 },
+          { key: "water_damage",         label: "Water or liquid damage",         image: IMG.tablet_water,          deduction: 45 },
+        ],
+      },
+    ],
+    accessories: [
+      { key: "original_box",      label: "Original box included",             image: IMG.acc_box,       order: 1, addition: 2 },
+      { key: "original_charger",  label: "Original charger/cable",            image: IMG.acc_charger,   order: 2, addition: 3 },
+      { key: "bill_invoice",      label: "Original purchase bill/invoice",    image: IMG.acc_invoice,   order: 3, addition: 3 },
+      { key: "stylus",            label: "Stylus / Apple Pencil included",    image: IMG.acc_stylus,    order: 4, addition: 6 },
+      { key: "keyboard_acc",      label: "Keyboard cover included",           image: IMG.acc_keyboard,  order: 5, addition: 4 },
+    ],
+  },
+
+  {
+    category: "smartwatch",
+    processingFee: 199,
+    questions: [
+      { key: "device_turns_on",  label: "Does the watch turn on normally?",                  order: 1, deductionOnNo: 65 },
+      { key: "touch_working",    label: "Is the touchscreen responding correctly?",           order: 2, deductionOnNo: 28 },
+      { key: "battery_good",     label: "Does battery last a full day?",                     order: 3, deductionOnNo: 25 },
+      { key: "sensors_working",  label: "Are health sensors (heart rate etc.) working?",     order: 4, deductionOnNo: 18 },
+    ],
+    defects: [
+      {
+        key: "screen_damage", label: "Screen / Display Damage", image: IMG.watch_screen_cracked, order: 1, deduction: 0,
+        children: [
+          { key: "screen_cracked",      label: "Screen cracked or shattered",  image: IMG.watch_screen_cracked,  deduction: 55 },
+          { key: "dead_pixels",         label: "Dead pixels on display",       image: IMG.watch_dead_pixels,     deduction: 28 },
+          { key: "touch_unresponsive",  label: "Touch unresponsive",           image: IMG.watch_touch_issue,     deduction: 25 },
+        ],
+      },
+      {
+        key: "body_damage", label: "Body / Casing Damage", image: IMG.watch_body_scratches, order: 2, deduction: 0,
+        children: [
+          { key: "body_scratches",  label: "Deep scratches on case",          image: IMG.watch_body_scratches,  deduction: 10 },
+          { key: "body_dents",      label: "Dents on case",                   image: IMG.watch_body_dents,      deduction: 12 },
+          { key: "crown_damaged",   label: "Digital crown/buttons damaged",   image: IMG.watch_crown,           deduction: 18 },
+          { key: "strap_damaged",   label: "Strap broken or damaged",         image: IMG.watch_strap_damaged,   deduction: 5  },
+        ],
+      },
+      {
+        key: "hardware_issues", label: "Hardware / Functional Issues", image: IMG.watch_battery, order: 3, deduction: 0,
+        children: [
+          { key: "battery_issue",   label: "Battery not holding charge",    image: IMG.watch_battery,   deduction: 30 },
+          { key: "charging_issue",  label: "Charging not working",          image: IMG.watch_charging,  deduction: 25 },
+          { key: "sensor_issue",    label: "Health sensors not working",    image: IMG.watch_sensor,    deduction: 22 },
+          { key: "water_damage",    label: "Water damage",                  image: IMG.watch_water,     deduction: 45 },
+        ],
+      },
+    ],
+    accessories: [
+      { key: "original_box",      label: "Original box included",          image: IMG.acc_box,      order: 1, addition: 3 },
+      { key: "original_charger",  label: "Original charger",               image: IMG.acc_charger,  order: 2, addition: 5 },
+      { key: "extra_strap",       label: "Extra strap included",           image: IMG.acc_strap,    order: 3, addition: 3 },
+    ],
+  },
+
+  {
+    category: "television",
+    processingFee: 999,
+    questions: [
+      { key: "powers_on",         label: "Does the TV power on and off normally?",      order: 1, deductionOnNo: 75 },
+      { key: "display_uniform",   label: "Is the display uniform with no patches?",     order: 2, deductionOnNo: 45 },
+      { key: "remote_working",    label: "Is the original remote control working?",     order: 3, deductionOnNo: 10 },
+      { key: "hdmi_working",      label: "Are HDMI ports working properly?",            order: 4, deductionOnNo: 18 },
+      { key: "smart_tv_working",  label: "Is Smart TV / internet working?",             order: 5, deductionOnNo: 12 },
+    ],
+    defects: [
+      {
+        key: "panel_damage", label: "Panel / Screen Damage", image: IMG.tv_panel_cracked, order: 1, deduction: 0,
+        children: [
+          { key: "panel_cracked",   label: "Panel cracked or physically broken",      image: IMG.tv_panel_cracked,    deduction: 85 },
+          { key: "panel_lines",     label: "Horizontal or vertical lines",            image: IMG.tv_panel_lines,      deduction: 38 },
+          { key: "dead_pixels",     label: "Dead pixels or dark patches",             image: IMG.tv_dead_pixels,      deduction: 28 },
+          { key: "burn_in",         label: "Screen burn-in or ghost image",           image: IMG.tv_burn_in,          deduction: 42 },
+          { key: "discoloration",   label: "Screen discoloration or colour shift",    image: IMG.tv_discoloration,    deduction: 22 },
+        ],
+      },
+      {
+        key: "body_damage", label: "Body / Casing Damage", image: IMG.tv_bezel_cracked, order: 2, deduction: 0,
+        children: [
+          { key: "bezel_cracked",  label: "Bezel/frame cracked",          image: IMG.tv_bezel_cracked,  deduction: 15 },
+          { key: "stand_broken",   label: "Stand/legs broken or missing", image: IMG.tv_stand_broken,   deduction: 18 },
+        ],
+      },
+      {
+        key: "hardware_issues", label: "Hardware / Functional Issues", image: IMG.tv_power, order: 3, deduction: 0,
+        children: [
+          { key: "speaker_issue",   label: "Speaker not working or distorted",    image: IMG.tv_speaker,      deduction: 18 },
+          { key: "hdmi_port_issue", label: "HDMI ports not working",              image: IMG.tv_hdmi,         deduction: 18 },
+          { key: "usb_port_issue",  label: "USB ports not working",               image: IMG.tv_usb_port,     deduction: 10 },
+          { key: "power_issue",     label: "Takes long to power on/restarts",     image: IMG.tv_power,        deduction: 22 },
+          { key: "remote_issue",    label: "Remote control not working",          image: IMG.tv_remote_issue, deduction: 8  },
+          { key: "no_signal",       label: "No signal / input detection issues",  image: IMG.tv_no_signal,    deduction: 15 },
+        ],
+      },
+    ],
+    accessories: [
+      { key: "remote",          label: "Original remote control",       image: IMG.acc_remote,   order: 1, addition: 3 },
+      { key: "original_stand",  label: "Original stand/legs",           image: IMG.acc_stand,    order: 2, addition: 4 },
+      { key: "original_box",    label: "Original packaging box",        image: IMG.acc_box,      order: 3, addition: 2 },
+      { key: "bill_invoice",    label: "Original purchase bill/invoice", image: IMG.acc_invoice, order: 4, addition: 3 },
+      { key: "hdmi_cable",      label: "HDMI cable included",           image: IMG.acc_cable,    order: 5, addition: 2 },
+    ],
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
