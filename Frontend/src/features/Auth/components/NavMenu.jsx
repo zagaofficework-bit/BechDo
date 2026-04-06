@@ -20,6 +20,7 @@ export default function NavMenu({
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const isProductDetail = location.pathname.startsWith("/product/");
 
   const isWishlist = location.pathname === "/wishlist";
   const isCart = location.pathname === "/cart";
@@ -110,6 +111,8 @@ export default function NavMenu({
       ],
     },
   ];
+
+  if (isProductDetail) return null;
 
   return (
     <>
@@ -206,7 +209,7 @@ export default function NavMenu({
       </div>
 
       {/* ═══════════════ MOBILE OVERLAY ═══════════════ */}
-      {mobileOpen && (
+      {mobileOpen && !isProductDetail && (
         <div
           className="fixed inset-0 bg-black/40 z-40 md:hidden"
           onClick={() => setMobileMenuOpen(false)}
@@ -214,7 +217,7 @@ export default function NavMenu({
       )}
 
       {/* ═══════════════ MOBILE DRAWER ═══════════════ */}
-      <div
+      {!isProductDetail && (<div
         className={`fixed top-0 right-0 h-full w-[300px] sm:w-[320px] bg-white z-50 shadow-2xl transform transition-transform duration-300 md:hidden overflow-y-auto`}
         style={{ transform: mobileOpen ? "translateX(0)" : "translateX(100%)" }}
       >
@@ -372,7 +375,7 @@ export default function NavMenu({
             </div>
           ))}
         </div>
-      </div>
+      </div>)}
     </>
   );
 }

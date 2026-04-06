@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 import { useSubscriptionContext } from "../../../context/subscription.context";
@@ -210,6 +210,23 @@ export default function NavBar() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const isProductDetail = location.pathname.startsWith("/product/");
+  const filterRoutes = [
+  "/phones",
+  "/laptops",
+  "/tablets",
+  "/smartwatches",
+  "/televisions"
+];
+
+const isFilterPage = filterRoutes.some(route =>
+  location.pathname.startsWith(route)
+);
+
+  useEffect(() => {
+  setMobileMenuOpen(false);
+}, [location.pathname]);
+
   const onLogout = async () => {
     try {
       setLoggingOut(true);
@@ -257,7 +274,7 @@ export default function NavBar() {
           </div>
 
           {/* Search bar — desktop only, hidden for admins */}
-          {!isAdmin && (
+          {!isAdmin && !isFilterPage && (
             <div className="hidden md:flex flex-1 mx-4 lg:mx-6 items-center border rounded-lg px-3 py-2 bg-gray-50">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0"
                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -377,7 +394,8 @@ export default function NavBar() {
             )}
 
             {/* Hamburger — mobile only */}
-            <button
+            
+            {!isProductDetail && (<button
               className="md:hidden text-gray-700 p-1.5 flex-shrink-0 rounded-lg hover:bg-gray-100 transition-colors"
               onClick={() => setMobileMenuOpen(v => !v)}
               aria-label="Toggle menu"
@@ -387,12 +405,12 @@ export default function NavBar() {
                   ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
               </svg>
-            </button>
+            </button>)}
           </div>
         </div>
 
         {/* Mobile search bar */}
-        {!isAdmin && (
+        {!isAdmin && !isFilterPage && (
           <div className="mt-2.5 md:hidden flex items-center border rounded-lg px-3 py-2 bg-gray-50">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 mr-2 flex-shrink-0"
               fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -405,7 +423,7 @@ export default function NavBar() {
         )}
       </nav>
 
-      <NavMenu
+      {!isProductDetail  && !isFilterPage && <NavMenu
         mobileOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
         user={user}
@@ -415,7 +433,7 @@ export default function NavBar() {
         onLogout={onLogout}
         loggingOut={loggingOut}
         isPremium={isPremium}
-      />
+      />}
     </div>
   );
 }
