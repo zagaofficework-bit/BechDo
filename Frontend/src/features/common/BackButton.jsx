@@ -9,7 +9,7 @@ export default function BackButton({
 
   const handleBack = () => {
     if (window.history.length > 1) {
-      navigate(-1);
+      navigate("/");
     } else {
       navigate(fallback);
     }

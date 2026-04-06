@@ -145,7 +145,8 @@ const CancelConfirmModal = ({ listing, onConfirm, onClose, loading }) => (
       <div className="px-6 py-4 bg-amber-50 border-b border-amber-100">
         <p className="text-xs text-amber-700 font-medium flex items-start gap-2">
           <Ic d={I.info} className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-          Once cancelled, sellers will no longer be able to see or contact you about this device.
+          Once cancelled, sellers will no longer be able to see or contact you
+          about this device.
         </p>
       </div>
       <div className="px-6 py-4 flex gap-3 justify-end">
@@ -232,9 +233,9 @@ const AddressModal = ({ initial, onSave, onClose, saving }) => {
       const geo = data.data;
       setForm((p) => ({
         ...p,
-        street:  geo.street  || p.street,
-        city:    geo.city    || p.city,
-        state:   geo.state   || p.state,
+        street: geo.street || p.street,
+        city: geo.city || p.city,
+        state: geo.state || p.state,
         pincode: geo.pincode || p.pincode,
         country: geo.country || p.country || "India",
       }));
@@ -277,39 +278,89 @@ const AddressModal = ({ initial, onSave, onClose, saving }) => {
               {detecting ? (
                 <span className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin flex-shrink-0" />
               ) : (
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                <svg
+                  className="w-3.5 h-3.5 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
                 </svg>
               )}
               {detecting ? "Detecting location…" : "Use Current Location"}
             </button>
             {detectError && (
-              <p className="text-xs text-red-500 font-medium flex-1">{detectError}</p>
+              <p className="text-xs text-red-500 font-medium flex-1">
+                {detectError}
+              </p>
             )}
           </div>
 
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-slate-100" />
-            <span className="text-xs text-slate-400 font-medium">or enter manually</span>
+            <span className="text-xs text-slate-400 font-medium">
+              or enter manually
+            </span>
             <div className="flex-1 h-px bg-slate-100" />
           </div>
 
-          <Field label="Street" icon={I.map} value={form.street} onChange={set("street")} placeholder="House / Flat / Block / Area" />
+          <Field
+            label="Street"
+            icon={I.map}
+            value={form.street}
+            onChange={set("street")}
+            placeholder="House / Flat / Block / Area"
+          />
           <div className="grid grid-cols-2 gap-4">
-            <Field label="City"  value={form.city}  onChange={set("city")}  placeholder="Mumbai" />
-            <Field label="State" value={form.state} onChange={set("state")} placeholder="Maharashtra" />
+            <Field
+              label="City"
+              value={form.city}
+              onChange={set("city")}
+              placeholder="Mumbai"
+            />
+            <Field
+              label="State"
+              value={form.state}
+              onChange={set("state")}
+              placeholder="Maharashtra"
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Pincode" value={form.pincode} onChange={set("pincode")} placeholder="400001" />
-            <Field label="Country" value={form.country} onChange={set("country")} placeholder="India" />
+            <Field
+              label="Pincode"
+              value={form.pincode}
+              onChange={set("pincode")}
+              placeholder="400001"
+            />
+            <Field
+              label="Country"
+              value={form.country}
+              onChange={set("country")}
+              placeholder="India"
+            />
           </div>
           <label className="flex items-center gap-2.5 cursor-pointer select-none">
-            <input type="checkbox" checked={form.isDefault} onChange={set("isDefault")} className="w-4 h-4 accent-[#1132d4] rounded" />
-            <span className="text-sm font-medium text-slate-700">Set as default address</span>
+            <input
+              type="checkbox"
+              checked={form.isDefault}
+              onChange={set("isDefault")}
+              className="w-4 h-4 accent-[#1132d4] rounded"
+            />
+            <span className="text-sm font-medium text-slate-700">
+              Set as default address
+            </span>
           </label>
         </div>
         <div className="px-6 py-4 border-t border-slate-100 flex gap-3 justify-end">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
+          >
             Cancel
           </button>
           <button
@@ -333,23 +384,23 @@ const AddressModal = ({ initial, onSave, onClose, saving }) => {
 // ─── listing status config ────────────────────────────────────────────────────
 const STATUS_STYLES = {
   available: {
-    pill:  "bg-emerald-50 text-emerald-700 border-emerald-200",
-    dot:   "bg-emerald-400",
+    pill: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    dot: "bg-emerald-400",
     label: "Available",
   },
   accepted: {
-    pill:  "bg-blue-50 text-blue-700 border-blue-200",
-    dot:   "bg-blue-400",
+    pill: "bg-blue-50 text-blue-700 border-blue-200",
+    dot: "bg-blue-400",
     label: "Accepted",
   },
   completed: {
-    pill:  "bg-teal-50 text-teal-700 border-teal-200",
-    dot:   "bg-teal-500",
+    pill: "bg-teal-50 text-teal-700 border-teal-200",
+    dot: "bg-teal-500",
     label: "Completed",
   },
   cancelled: {
-    pill:  "bg-slate-100 text-slate-500 border-slate-200",
-    dot:   "bg-slate-400",
+    pill: "bg-slate-100 text-slate-500 border-slate-200",
+    dot: "bg-slate-400",
     label: "Cancelled",
   },
 };
@@ -364,11 +415,11 @@ const wasRejectedAndRelisted = (l) =>
 // ─── My Listings panel ────────────────────────────────────────────────────────
 function MyListingsPanel({ showToast }) {
   const navigate = useNavigate();
-  const [listings,     setListings]     = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [cancelModal,  setCancelModal]  = useState(null); // listing object or null
-  const [cancelling,   setCancelling]   = useState(false);
-  const [pickupModal,  setPickupModal]  = useState(null); // listing object or null
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [cancelModal, setCancelModal] = useState(null); // listing object or null
+  const [cancelling, setCancelling] = useState(false);
+  const [pickupModal, setPickupModal] = useState(null); // listing object or null
 
   const load = async () => {
     setLoading(true);
@@ -382,7 +433,9 @@ function MyListingsPanel({ showToast }) {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   // ── Cancel flow ───────────────────────────────────────────────────────────
   const handleCancelConfirm = async () => {
@@ -402,7 +455,9 @@ function MyListingsPanel({ showToast }) {
 
   const handlePickupConfirmed = async () => {
     setPickupModal(null);
-    showToast("Pickup confirmed! The seller will arrive at your scheduled time.");
+    showToast(
+      "Pickup confirmed! The seller will arrive at your scheduled time.",
+    );
     await load();
   };
 
@@ -416,7 +471,10 @@ function MyListingsPanel({ showToast }) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-28 rounded-2xl bg-slate-100 animate-pulse" />
+          <div
+            key={i}
+            className="h-28 rounded-2xl bg-slate-100 animate-pulse"
+          />
         ))}
       </div>
     );
@@ -428,7 +486,9 @@ function MyListingsPanel({ showToast }) {
           <Ic d={I.device} className="w-6 h-6" />
         </div>
         <p className="text-slate-700 font-semibold">No listings yet</p>
-        <p className="text-slate-400 text-sm mt-1">Sell your old devices and earn instant cash</p>
+        <p className="text-slate-400 text-sm mt-1">
+          Sell your old devices and earn instant cash
+        </p>
         <button
           onClick={() => navigate("/sell")}
           className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1132d4] text-white text-sm font-bold shadow-[0_3px_12px_rgba(17,50,212,0.3)] hover:bg-[#0d28b8] transition-all"
@@ -442,17 +502,20 @@ function MyListingsPanel({ showToast }) {
     <>
       <div className="space-y-4">
         {listings.map((listing) => {
-          const st             = STATUS_STYLES[listing.status] ?? STATUS_STYLES.available;
-          const variantLabel   = [listing.ram, listing.storage].filter(Boolean).join(" / ");
+          const st = STATUS_STYLES[listing.status] ?? STATUS_STYLES.available;
+          const variantLabel = [listing.ram, listing.storage]
+            .filter(Boolean)
+            .join(" / ");
           const awaitingConfirm = needsConfirmation(listing);
-          const isScheduled    = listing.pickup?.status === "scheduled";
-          const noSlots        =
+          const rejectedRelisted = wasRejectedAndRelisted(listing);
+          const isScheduled =
+            listing.pickup?.status === "scheduled" && !rejectedRelisted;
+          const noSlots =
             listing.status === "accepted" &&
             listing.pickup?.status === "awaiting_user_confirmation" &&
             (listing.pickup?.proposedSlots?.length ?? 0) === 0;
-          const rejectedRelisted = wasRejectedAndRelisted(listing);
-          const isAvailable    = listing.status === "available";
-          const isCancelled    = listing.status === "cancelled";
+          const isAvailable = listing.status === "available";
+          const isCancelled = listing.status === "cancelled";
 
           return (
             <div
@@ -461,10 +524,10 @@ function MyListingsPanel({ showToast }) {
                 awaitingConfirm
                   ? "border-[#1132d4]/40 shadow-[0_2px_16px_rgba(17,50,212,0.12)]"
                   : rejectedRelisted
-                  ? "border-amber-300/60 shadow-[0_2px_12px_rgba(245,158,11,0.1)]"
-                  : isCancelled
-                  ? "border-slate-200 opacity-60"
-                  : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
+                    ? "border-amber-300/60 shadow-[0_2px_12px_rgba(245,158,11,0.1)]"
+                    : isCancelled
+                      ? "border-slate-200 opacity-60"
+                      : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
               }`}
             >
               {/* ── Action required banner ── */}
@@ -497,7 +560,9 @@ function MyListingsPanel({ showToast }) {
                         Previous seller passed on this listing
                       </p>
                       <p className="text-amber-600 text-xs mt-0.5 leading-snug">
-                        Your device is back in the market and visible to all sellers. You'll be notified as soon as a new seller accepts it.
+                        Your device is back in the market and visible to all
+                        sellers. You'll be notified as soon as a new seller
+                        accepts it.
                       </p>
                       {listing.rejectionReason && (
                         <p className="text-amber-500 text-xs mt-1 italic">
@@ -515,7 +580,10 @@ function MyListingsPanel({ showToast }) {
               {/* ── Waiting for seller slots banner ── */}
               {noSlots && (
                 <div className="bg-blue-50 border-b border-blue-100 px-4 py-2.5 flex items-center gap-2">
-                  <Ic d={I.clock} className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                  <Ic
+                    d={I.clock}
+                    className="w-3.5 h-3.5 text-blue-500 flex-shrink-0"
+                  />
                   <p className="text-blue-700 text-xs font-semibold">
                     Seller accepted — waiting for them to propose pickup slots
                   </p>
@@ -525,9 +593,13 @@ function MyListingsPanel({ showToast }) {
               {/* ── Scheduled banner ── */}
               {isScheduled && (
                 <div className="bg-emerald-50 border-b border-emerald-100 px-4 py-2.5 flex items-center gap-2">
-                  <Ic d={I.check} className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                  <Ic
+                    d={I.check}
+                    className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0"
+                  />
                   <p className="text-emerald-700 text-xs font-semibold">
-                    Pickup scheduled · {listing.pickup.confirmedSlot?.date} · {listing.pickup.confirmedSlot?.timeRange}
+                    Pickup scheduled · {listing.pickup.confirmedSlot?.date} ·{" "}
+                    {listing.pickup.confirmedSlot?.timeRange}
                   </p>
                 </div>
               )}
@@ -535,7 +607,10 @@ function MyListingsPanel({ showToast }) {
               {/* ── Cancelled banner ── */}
               {isCancelled && (
                 <div className="bg-slate-100 border-b border-slate-200 px-4 py-2.5 flex items-center gap-2">
-                  <Ic d={I.ban} className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <Ic
+                    d={I.ban}
+                    className="w-3.5 h-3.5 text-slate-400 flex-shrink-0"
+                  />
                   <p className="text-slate-500 text-xs font-semibold">
                     You cancelled this listing
                   </p>
@@ -571,14 +646,20 @@ function MyListingsPanel({ showToast }) {
                   </div>
 
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${st.pill}`}>
+                    <span
+                      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${st.pill}`}
+                    >
                       <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
                       {rejectedRelisted ? "Relisted" : st.label}
                     </span>
-                    <span className="text-xs text-slate-400 capitalize">{listing.category}</span>
+                    <span className="text-xs text-slate-400 capitalize">
+                      {listing.category}
+                    </span>
                     <span className="text-xs text-slate-400">
                       {new Date(listing.createdAt).toLocaleDateString("en-IN", {
-                        day: "numeric", month: "short", year: "numeric",
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
                       })}
                     </span>
                   </div>
@@ -586,15 +667,19 @@ function MyListingsPanel({ showToast }) {
                   {/* Accepted by info */}
                   {listing.status === "accepted" && listing.acceptedBy && (
                     <p className="text-xs text-blue-600 font-medium mt-1">
-                      Accepted by {listing.acceptedBy.firstname} {listing.acceptedBy.lastname} · {listing.acceptedBy.mobile}
+                      Accepted by {listing.acceptedBy.firstname}{" "}
+                      {listing.acceptedBy.lastname} ·{" "}
+                      {listing.acceptedBy.mobile}
                     </p>
                   )}
 
                   {/* Payment method confirmed */}
                   {isScheduled && listing.pickup?.paymentMethod && (
                     <p className="text-xs text-emerald-600 font-medium mt-1">
-                      💳 Payment: {listing.pickup.paymentMethod.replace("_", " ")}
-                      {listing.pickup.paymentDetails && ` — ${listing.pickup.paymentDetails}`}
+                      💳 Payment:{" "}
+                      {listing.pickup.paymentMethod.replace("_", " ")}
+                      {listing.pickup.paymentDetails &&
+                        ` — ${listing.pickup.paymentDetails}`}
                     </p>
                   )}
 
@@ -639,9 +724,13 @@ function MyListingsPanel({ showToast }) {
               {/* ── Defects bar ── */}
               {listing.evaluation?.defects?.length > 0 && (
                 <div className="px-4 py-2.5 bg-amber-50/60 border-t border-amber-100 flex items-center gap-2">
-                  <Ic d={I.tag} className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                  <Ic
+                    d={I.tag}
+                    className="w-3.5 h-3.5 text-amber-500 flex-shrink-0"
+                  />
                   <p className="text-xs text-amber-700">
-                    {listing.evaluation.defects.length} defect{listing.evaluation.defects.length > 1 ? "s" : ""} noted:{" "}
+                    {listing.evaluation.defects.length} defect
+                    {listing.evaluation.defects.length > 1 ? "s" : ""} noted:{" "}
                     {listing.evaluation.defects.map((d) => d.label).join(", ")}
                   </p>
                 </div>
@@ -696,13 +785,13 @@ export default function ProfilePage() {
     mobile: "",
   });
   const [profileSaving, setProfileSaving] = useState(false);
-  const [picUploading,  setPicUploading]  = useState(false);
+  const [picUploading, setPicUploading] = useState(false);
   const picRef = useRef();
 
-  const [addresses,    setAddresses]   = useState([]);
-  const [addrLoading,  setAddrLoading] = useState(false);
-  const [addrModal,    setAddrModal]   = useState(null);
-  const [addrSaving,   setAddrSaving]  = useState(false);
+  const [addresses, setAddresses] = useState([]);
+  const [addrLoading, setAddrLoading] = useState(false);
+  const [addrModal, setAddrModal] = useState(null);
+  const [addrSaving, setAddrSaving] = useState(false);
 
   const navigate = useNavigate();
 
@@ -716,9 +805,9 @@ export default function ProfilePage() {
     if (user) {
       setProfileForm({
         firstname: user.firstname ?? "",
-        lastname:  user.lastname  ?? "",
-        email:     user.email     ?? "",
-        mobile:    user.mobile    ?? "",
+        lastname: user.lastname ?? "",
+        email: user.email ?? "",
+        mobile: user.mobile ?? "",
       });
     }
   }, [user]);
@@ -746,7 +835,10 @@ export default function ProfilePage() {
       setProfileSaving(false);
       return;
     }
-    if (!profileForm.firstname.trim() || profileForm.firstname.trim().length < 2) {
+    if (
+      !profileForm.firstname.trim() ||
+      profileForm.firstname.trim().length < 2
+    ) {
       showToast("First name must be at least 2 characters", "error");
       setProfileSaving(false);
       return;
@@ -841,17 +933,27 @@ export default function ProfilePage() {
     }
   };
 
-  const firstName  = user?.firstname ?? user?.firstName ?? "User";
-  const lastName   = user?.lastname  ?? user?.lastName  ?? "";
+  const firstName = user?.firstname ?? user?.firstName ?? "User";
+  const lastName = user?.lastname ?? user?.lastName ?? "";
   const profilePic = user?.profilePic ?? null;
-  const role       = user?.role ?? "user";
-  const initials   = `${firstName[0] ?? "U"}${lastName[0] ?? ""}`.toUpperCase();
+  const role = user?.role ?? "user";
+  const initials = `${firstName[0] ?? "U"}${lastName[0] ?? ""}`.toUpperCase();
 
   const ALL_TABS = [
-    { id: "profile",   label: "Profile",     icon: I.user,   roles: ["user", "seller"] },
-    { id: "addresses", label: "Addresses",   icon: I.map,    roles: ["user", "seller"] },
-    { id: "orders",    label: "My Orders",   icon: I.orders, roles: ["user"] },
-    { id: "listings",  label: "My Listings", icon: I.device, roles: ["user"] },
+    {
+      id: "profile",
+      label: "Profile",
+      icon: I.user,
+      roles: ["user", "seller"],
+    },
+    {
+      id: "addresses",
+      label: "Addresses",
+      icon: I.map,
+      roles: ["user", "seller"],
+    },
+    { id: "orders", label: "My Orders", icon: I.orders, roles: ["user"] },
+    { id: "listings", label: "My Listings", icon: I.device, roles: ["user"] },
   ];
   const TABS = ALL_TABS.filter((t) => t.roles.includes(role));
 
@@ -875,11 +977,16 @@ export default function ProfilePage() {
             <div className="w-8 h-8 rounded-lg bg-[#1132d4] flex items-center justify-center shadow-[0_2px_8px_rgba(17,50,212,0.4)]">
               <span className="text-white text-sm font-black">R</span>
             </div>
-            <span className="text-sm font-bold text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <span
+              className="text-sm font-bold text-slate-800"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
               My Account
             </span>
           </div>
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${role === "seller" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-[#1132d4]"}`}>
+          <span
+            className={`text-xs font-bold px-2.5 py-1 rounded-full ${role === "seller" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-[#1132d4]"}`}
+          >
             {role.charAt(0).toUpperCase() + role.slice(1)}
           </span>
         </div>
@@ -895,9 +1002,15 @@ export default function ProfilePage() {
             <div className="relative flex-shrink-0">
               <div className="w-20 h-20 rounded-2xl bg-white/20 border-2 border-white/30 overflow-hidden shadow-lg flex items-center justify-center">
                 {profilePic ? (
-                  <img src={profilePic} alt="avatar" className="w-full h-full object-cover" />
+                  <img
+                    src={profilePic}
+                    alt="avatar"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
-                  <span className="text-white text-2xl font-black">{initials}</span>
+                  <span className="text-white text-2xl font-black">
+                    {initials}
+                  </span>
                 )}
                 {picUploading && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-2xl">
@@ -911,25 +1024,42 @@ export default function ProfilePage() {
               >
                 <Ic d={I.camera} className="w-3.5 h-3.5" />
               </button>
-              <input ref={picRef} type="file" accept="image/*" className="hidden" onChange={handlePicChange} />
+              <input
+                ref={picRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePicChange}
+              />
             </div>
 
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-extrabold text-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              <h1
+                className="text-xl font-extrabold text-white"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
                 {firstName} {lastName}
               </h1>
               <p className="text-blue-200 text-sm mt-0.5">{user?.email}</p>
               <p className="text-blue-200 text-xs mt-0.5">{user?.mobile}</p>
               {user?.defaultAddress?.full && (
                 <div className="flex items-center gap-1.5 mt-2">
-                  <Ic d={I.map} className="w-3.5 h-3.5 text-blue-300 flex-shrink-0" />
-                  <span className="text-blue-200 text-xs truncate">{user.defaultAddress.full}</span>
+                  <Ic
+                    d={I.map}
+                    className="w-3.5 h-3.5 text-blue-300 flex-shrink-0"
+                  />
+                  <span className="text-blue-200 text-xs truncate">
+                    {user.defaultAddress.full}
+                  </span>
                 </div>
               )}
             </div>
 
             {profilePic && (
-              <button onClick={handleDeletePic} className="flex-shrink-0 text-blue-200 hover:text-red-300 transition-colors">
+              <button
+                onClick={handleDeletePic}
+                className="flex-shrink-0 text-blue-200 hover:text-red-300 transition-colors"
+              >
                 <Ic d={I.trash} className="w-4 h-4" />
               </button>
             )}
@@ -977,20 +1107,66 @@ export default function ProfilePage() {
               }
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="First Name" icon={I.user} value={profileForm.firstname} onChange={(e) => setProfileForm((p) => ({ ...p, firstname: e.target.value }))} placeholder="John" />
-                <Field label="Last Name" value={profileForm.lastname} onChange={(e) => setProfileForm((p) => ({ ...p, lastname: e.target.value }))} placeholder="Doe" />
-                <Field label="Email Address" icon={I.mail} type="email" value={profileForm.email} onChange={(e) => setProfileForm((p) => ({ ...p, email: e.target.value }))} placeholder="john@example.com" />
-                <Field label="Mobile Number" icon={I.phone} type="tel" value={profileForm.mobile} onChange={(e) => setProfileForm((p) => ({ ...p, mobile: e.target.value }))} placeholder="+91 98765 43210" />
+                <Field
+                  label="First Name"
+                  icon={I.user}
+                  value={profileForm.firstname}
+                  onChange={(e) =>
+                    setProfileForm((p) => ({ ...p, firstname: e.target.value }))
+                  }
+                  placeholder="John"
+                />
+                <Field
+                  label="Last Name"
+                  value={profileForm.lastname}
+                  onChange={(e) =>
+                    setProfileForm((p) => ({ ...p, lastname: e.target.value }))
+                  }
+                  placeholder="Doe"
+                />
+                <Field
+                  label="Email Address"
+                  icon={I.mail}
+                  type="email"
+                  value={profileForm.email}
+                  onChange={(e) =>
+                    setProfileForm((p) => ({ ...p, email: e.target.value }))
+                  }
+                  placeholder="john@example.com"
+                />
+                <Field
+                  label="Mobile Number"
+                  icon={I.phone}
+                  type="tel"
+                  value={profileForm.mobile}
+                  onChange={(e) =>
+                    setProfileForm((p) => ({ ...p, mobile: e.target.value }))
+                  }
+                  placeholder="+91 98765 43210"
+                />
               </div>
               <div className="mt-5 pt-5 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
-                  { label: "Account Type", value: role.charAt(0).toUpperCase() + role.slice(1) },
-                  { label: "Status",       value: user?.accountStatus ?? "Active" },
-                  { label: "Verified",     value: user?.isVerified ? "Yes ✓" : "Pending" },
+                  {
+                    label: "Account Type",
+                    value: role.charAt(0).toUpperCase() + role.slice(1),
+                  },
+                  { label: "Status", value: user?.accountStatus ?? "Active" },
+                  {
+                    label: "Verified",
+                    value: user?.isVerified ? "Yes ✓" : "Pending",
+                  },
                 ].map((item) => (
-                  <div key={item.label} className="bg-slate-50 rounded-xl px-3 py-2.5">
-                    <p className="text-xs text-slate-400 font-medium">{item.label}</p>
-                    <p className="text-sm font-bold text-slate-700 mt-0.5">{item.value}</p>
+                  <div
+                    key={item.label}
+                    className="bg-slate-50 rounded-xl px-3 py-2.5"
+                  >
+                    <p className="text-xs text-slate-400 font-medium">
+                      {item.label}
+                    </p>
+                    <p className="text-sm font-bold text-slate-700 mt-0.5">
+                      {item.value}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -1017,7 +1193,10 @@ export default function ProfilePage() {
               {addrLoading ? (
                 <div className="space-y-3">
                   {[1, 2].map((i) => (
-                    <div key={i} className="h-28 rounded-2xl bg-slate-100 animate-pulse" />
+                    <div
+                      key={i}
+                      className="h-28 rounded-2xl bg-slate-100 animate-pulse"
+                    />
                   ))}
                 </div>
               ) : addresses.length === 0 ? (
@@ -1025,8 +1204,12 @@ export default function ProfilePage() {
                   <div className="w-14 h-14 rounded-2xl bg-[#1132d4]/8 flex items-center justify-center mx-auto mb-3 text-[#1132d4]">
                     <Ic d={I.map} className="w-6 h-6" />
                   </div>
-                  <p className="text-slate-700 font-semibold">No addresses saved</p>
-                  <p className="text-slate-400 text-sm mt-1">Add an address for faster checkout</p>
+                  <p className="text-slate-700 font-semibold">
+                    No addresses saved
+                  </p>
+                  <p className="text-slate-400 text-sm mt-1">
+                    Add an address for faster checkout
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1050,23 +1233,38 @@ export default function ProfilePage() {
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-slate-800 leading-snug">
-                            {addr.full || [addr.street, addr.city].filter(Boolean).join(", ") || "—"}
+                            {addr.full ||
+                              [addr.street, addr.city]
+                                .filter(Boolean)
+                                .join(", ") ||
+                              "—"}
                           </p>
                           <p className="text-xs text-slate-400 mt-0.5">
-                            {[addr.state, addr.pincode, addr.country].filter(Boolean).join(" · ")}
+                            {[addr.state, addr.pincode, addr.country]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-200/70">
                         {!addr.isDefault && (
-                          <button onClick={() => handleSetDefault(addr._id)} className="text-xs font-semibold text-[#1132d4] hover:underline flex items-center gap-1">
+                          <button
+                            onClick={() => handleSetDefault(addr._id)}
+                            className="text-xs font-semibold text-[#1132d4] hover:underline flex items-center gap-1"
+                          >
                             <Ic d={I.check} className="w-3 h-3" /> Set Default
                           </button>
                         )}
-                        <button onClick={() => setAddrModal(addr)} className="ml-auto p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-[#1132d4] hover:text-[#1132d4] hover:bg-blue-50 transition-all">
+                        <button
+                          onClick={() => setAddrModal(addr)}
+                          className="ml-auto p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-[#1132d4] hover:text-[#1132d4] hover:bg-blue-50 transition-all"
+                        >
                           <Ic d={I.edit} />
                         </button>
-                        <button onClick={() => handleAddrDelete(addr._id)} className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-500 hover:bg-red-50 transition-all">
+                        <button
+                          onClick={() => handleAddrDelete(addr._id)}
+                          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                        >
                           <Ic d={I.trash} />
                         </button>
                       </div>
@@ -1081,7 +1279,11 @@ export default function ProfilePage() {
         {/* ── ORDERS TAB ── */}
         {tab === "orders" && role === "user" && (
           <div className="fade-in">
-            <Section title="My Orders" subtitle="Your purchase history" icon={I.orders}>
+            <Section
+              title="My Orders"
+              subtitle="Your purchase history"
+              icon={I.orders}
+            >
               <OrdersPanel />
             </Section>
           </div>
@@ -1119,7 +1321,11 @@ export default function ProfilePage() {
       )}
 
       {toast && (
-        <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />
+        <Toast
+          msg={toast.msg}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );
@@ -1128,52 +1334,52 @@ export default function ProfilePage() {
 // ─── Order status config ──────────────────────────────────────────────────────
 const ORDER_STATUS = {
   pending: {
-    pill:    "bg-amber-50 text-amber-700 border-amber-200",
-    dot:     "bg-amber-400",
-    bar:     "bg-amber-400",
-    label:   "Pending",
-    desc:    "Waiting for seller confirmation",
-    icon:    "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+    pill: "bg-amber-50 text-amber-700 border-amber-200",
+    dot: "bg-amber-400",
+    bar: "bg-amber-400",
+    label: "Pending",
+    desc: "Waiting for seller confirmation",
+    icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
   },
   confirmed: {
-    pill:    "bg-blue-50 text-blue-700 border-blue-200",
-    dot:     "bg-blue-500",
-    bar:     "bg-blue-500",
-    label:   "Confirmed",
-    desc:    "Seller confirmed your order",
-    icon:    "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
+    pill: "bg-blue-50 text-blue-700 border-blue-200",
+    dot: "bg-blue-500",
+    bar: "bg-blue-500",
+    label: "Confirmed",
+    desc: "Seller confirmed your order",
+    icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
   },
   shipped: {
-    pill:    "bg-indigo-50 text-indigo-700 border-indigo-200",
-    dot:     "bg-indigo-500",
-    bar:     "bg-indigo-500",
-    label:   "Shipped",
-    desc:    "Your order is on the way",
-    icon:    "M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0",
+    pill: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    dot: "bg-indigo-500",
+    bar: "bg-indigo-500",
+    label: "Shipped",
+    desc: "Your order is on the way",
+    icon: "M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0",
   },
   delivered: {
-    pill:    "bg-emerald-50 text-emerald-700 border-emerald-200",
-    dot:     "bg-emerald-500",
-    bar:     "bg-emerald-500",
-    label:   "Delivered",
-    desc:    "Order delivered successfully",
-    icon:    "M5 13l4 4L19 7",
+    pill: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    dot: "bg-emerald-500",
+    bar: "bg-emerald-500",
+    label: "Delivered",
+    desc: "Order delivered successfully",
+    icon: "M5 13l4 4L19 7",
   },
   cancelled: {
-    pill:    "bg-red-50 text-red-600 border-red-200",
-    dot:     "bg-red-400",
-    bar:     "bg-red-400",
-    label:   "Cancelled",
-    desc:    "This order was cancelled",
-    icon:    "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z",
+    pill: "bg-red-50 text-red-600 border-red-200",
+    dot: "bg-red-400",
+    bar: "bg-red-400",
+    label: "Cancelled",
+    desc: "This order was cancelled",
+    icon: "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z",
   },
   rejected: {
-    pill:    "bg-slate-100 text-slate-500 border-slate-200",
-    dot:     "bg-slate-400",
-    bar:     "bg-slate-400",
-    label:   "Rejected",
-    desc:    "Seller rejected this order",
-    icon:    "M6 18L18 6M6 6l12 12",
+    pill: "bg-slate-100 text-slate-500 border-slate-200",
+    dot: "bg-slate-400",
+    bar: "bg-slate-400",
+    label: "Rejected",
+    desc: "Seller rejected this order",
+    icon: "M6 18L18 6M6 6l12 12",
   },
 };
 
@@ -1182,19 +1388,19 @@ const PROGRESS_STEPS = ["pending", "confirmed", "shipped", "delivered"];
 
 // ─── Order detail modal ───────────────────────────────────────────────────────
 function OrderDetailModal({ order, onClose, onCancelled }) {
-  const [cancelling,   setCancelling]   = useState(false);
-  const [cancelError,  setCancelError]  = useState("");
-  const [showConfirm,  setShowConfirm]  = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-  const token    = localStorage.getItem("accessToken");
+  const token = localStorage.getItem("accessToken");
 
-  const cfg      = ORDER_STATUS[order.status] ?? ORDER_STATUS.pending;
-  const isFinal  = ["cancelled", "rejected", "delivered"].includes(order.status);
+  const cfg = ORDER_STATUS[order.status] ?? ORDER_STATUS.pending;
+  const isFinal = ["cancelled", "rejected", "delivered"].includes(order.status);
   const canCancel = order.status === "pending";
 
   // Compute step index for the progress bar
-  const stepIdx  = PROGRESS_STEPS.indexOf(order.status);
+  const stepIdx = PROGRESS_STEPS.indexOf(order.status);
   const isAborted = order.status === "cancelled" || order.status === "rejected";
 
   const handleCancel = async () => {
@@ -1223,8 +1429,11 @@ function OrderDetailModal({ order, onClose, onCancelled }) {
   const fmtDate = (d) =>
     d
       ? new Date(d).toLocaleString("en-IN", {
-          day: "numeric", month: "short", year: "numeric",
-          hour: "2-digit", minute: "2-digit",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
         })
       : null;
 
@@ -1232,17 +1441,31 @@ function OrderDetailModal({ order, onClose, onCancelled }) {
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Sheet on mobile, centered modal on desktop */}
       <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
-
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${cfg.pill}`}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d={cfg.icon} />
+            <div
+              className={`w-8 h-8 rounded-xl flex items-center justify-center ${cfg.pill}`}
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d={cfg.icon}
+                />
               </svg>
             </div>
             <div>
-              <p className="text-sm font-extrabold text-slate-800" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              <p
+                className="text-sm font-extrabold text-slate-800"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
                 Order Details
               </p>
               <p className="text-xs text-slate-400 font-medium">
@@ -1260,12 +1483,15 @@ function OrderDetailModal({ order, onClose, onCancelled }) {
 
         {/* ── Scrollable body ── */}
         <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
-
           {/* Product card */}
           <div className="flex items-center gap-4 bg-slate-50 rounded-2xl p-4 border border-slate-100">
             <div className="w-16 h-16 rounded-xl bg-white border border-slate-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
               {order.product?.images?.[0] ? (
-                <img src={order.product.images[0]} alt="" className="w-full h-full object-cover" />
+                <img
+                  src={order.product.images[0]}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <span className="text-2xl opacity-25">📦</span>
               )}
@@ -1280,14 +1506,18 @@ function OrderDetailModal({ order, onClose, onCancelled }) {
                 </p>
               )}
               <div className="flex items-center gap-2 mt-1.5">
-                <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border ${cfg.pill}`}>
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border ${cfg.pill}`}
+                >
                   <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                   {cfg.label}
                 </span>
               </div>
             </div>
             <div className="flex-shrink-0 text-right">
-              <p className="text-lg font-extrabold text-slate-900">{fmt(order.salePrice)}</p>
+              <p className="text-lg font-extrabold text-slate-900">
+                {fmt(order.salePrice)}
+              </p>
               <p className="text-xs text-slate-400 mt-0.5">Sale price</p>
             </div>
           </div>
@@ -1304,35 +1534,54 @@ function OrderDetailModal({ order, onClose, onCancelled }) {
                 <div
                   className={`absolute top-3.5 left-3.5 h-0.5 rounded-full transition-all duration-700 ${cfg.bar}`}
                   style={{
-                    width: stepIdx >= 0
-                      ? `${(stepIdx / (PROGRESS_STEPS.length - 1)) * 100}%`
-                      : "0%",
+                    width:
+                      stepIdx >= 0
+                        ? `${(stepIdx / (PROGRESS_STEPS.length - 1)) * 100}%`
+                        : "0%",
                   }}
                 />
                 <div className="relative flex justify-between">
                   {PROGRESS_STEPS.map((step, idx) => {
-                    const done    = stepIdx >= idx;
+                    const done = stepIdx >= idx;
                     const current = stepIdx === idx;
-                    const scfg    = ORDER_STATUS[step];
+                    const scfg = ORDER_STATUS[step];
                     return (
-                      <div key={step} className="flex flex-col items-center gap-1.5" style={{ width: "25%" }}>
-                        <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all z-10 ${
-                          current
-                            ? `${scfg.dot} border-white shadow-[0_0_0_3px] shadow-current/30`
-                            : done
-                            ? `${scfg.dot} border-white`
-                            : "bg-white border-slate-200"
-                        }`}>
+                      <div
+                        key={step}
+                        className="flex flex-col items-center gap-1.5"
+                        style={{ width: "25%" }}
+                      >
+                        <div
+                          className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all z-10 ${
+                            current
+                              ? `${scfg.dot} border-white shadow-[0_0_0_3px] shadow-current/30`
+                              : done
+                                ? `${scfg.dot} border-white`
+                                : "bg-white border-slate-200"
+                          }`}
+                        >
                           {done ? (
-                            <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            <svg
+                              className="w-3.5 h-3.5 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              strokeWidth={3}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M5 13l4 4L19 7"
+                              />
                             </svg>
                           ) : (
                             <span className="w-2 h-2 rounded-full bg-slate-200" />
                           )}
                         </div>
-                        <p className={`text-center leading-tight ${current ? "font-bold text-slate-800" : done ? "font-semibold text-slate-600" : "font-medium text-slate-400"}`}
-                           style={{ fontSize: "10px" }}>
+                        <p
+                          className={`text-center leading-tight ${current ? "font-bold text-slate-800" : done ? "font-semibold text-slate-600" : "font-medium text-slate-400"}`}
+                          style={{ fontSize: "10px" }}
+                        >
                           {scfg.label}
                         </p>
                       </div>
@@ -1340,7 +1589,9 @@ function OrderDetailModal({ order, onClose, onCancelled }) {
                   })}
                 </div>
               </div>
-              <p className={`text-xs font-medium mt-3 text-center ${cfg.pill.includes("emerald") ? "text-emerald-600" : "text-slate-500"}`}>
+              <p
+                className={`text-xs font-medium mt-3 text-center ${cfg.pill.includes("emerald") ? "text-emerald-600" : "text-slate-500"}`}
+              >
                 {cfg.desc}
               </p>
             </div>
@@ -1348,17 +1599,33 @@ function OrderDetailModal({ order, onClose, onCancelled }) {
 
           {/* Aborted state banner */}
           {isAborted && (
-            <div className={`rounded-2xl border p-4 flex items-start gap-3 ${cfg.pill}`}>
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${cfg.dot} bg-opacity-20`}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d={cfg.icon} />
+            <div
+              className={`rounded-2xl border p-4 flex items-start gap-3 ${cfg.pill}`}
+            >
+              <div
+                className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${cfg.dot} bg-opacity-20`}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d={cfg.icon}
+                  />
                 </svg>
               </div>
               <div>
                 <p className="text-sm font-bold">{cfg.label}</p>
                 <p className="text-xs mt-0.5 opacity-80">{cfg.desc}</p>
                 {order.rejectionReason && (
-                  <p className="text-xs mt-1 italic opacity-70">Reason: "{order.rejectionReason}"</p>
+                  <p className="text-xs mt-1 italic opacity-70">
+                    Reason: "{order.rejectionReason}"
+                  </p>
                 )}
               </div>
             </div>
@@ -1370,20 +1637,42 @@ function OrderDetailModal({ order, onClose, onCancelled }) {
               Order Info
             </p>
             {[
-              { label: "Order ID",       value: `#${order._id?.slice(-10).toUpperCase()}` },
-              { label: "Placed On",      value: fmtDate(order.createdAt) },
+              {
+                label: "Order ID",
+                value: `#${order._id?.slice(-10).toUpperCase()}`,
+              },
+              { label: "Placed On", value: fmtDate(order.createdAt) },
               { label: "Payment Method", value: order.paymentMethod },
               { label: "Payment Status", value: order.paymentStatus },
-              order.confirmedAt  && { label: "Confirmed At",  value: fmtDate(order.confirmedAt) },
-              order.cancelledAt  && { label: "Cancelled At",  value: fmtDate(order.cancelledAt) },
-              order.rejectedAt   && { label: "Rejected At",   value: fmtDate(order.rejectedAt) },
-              order.paidAt       && { label: "Paid At",       value: fmtDate(order.paidAt) },
+              order.confirmedAt && {
+                label: "Confirmed At",
+                value: fmtDate(order.confirmedAt),
+              },
+              order.cancelledAt && {
+                label: "Cancelled At",
+                value: fmtDate(order.cancelledAt),
+              },
+              order.rejectedAt && {
+                label: "Rejected At",
+                value: fmtDate(order.rejectedAt),
+              },
+              order.paidAt && {
+                label: "Paid At",
+                value: fmtDate(order.paidAt),
+              },
             ]
               .filter(Boolean)
               .map(({ label, value }) => (
-                <div key={label} className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 first:border-0">
-                  <span className="text-xs text-slate-500 font-medium">{label}</span>
-                  <span className="text-xs text-slate-800 font-semibold text-right capitalize">{value ?? "—"}</span>
+                <div
+                  key={label}
+                  className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 first:border-0"
+                >
+                  <span className="text-xs text-slate-500 font-medium">
+                    {label}
+                  </span>
+                  <span className="text-xs text-slate-800 font-semibold text-right capitalize">
+                    {value ?? "—"}
+                  </span>
                 </div>
               ))}
           </div>
@@ -1394,20 +1683,36 @@ function OrderDetailModal({ order, onClose, onCancelled }) {
               Price Breakdown
             </p>
             {[
-              { label: "Product Price",   value: fmt(order.salePrice) },
-              { label: "Commission",      value: order.commissionAmount ? `${fmt(order.commissionAmount)} (${order.commissionRate}%)` : null },
+              { label: "Product Price", value: fmt(order.salePrice) },
+              {
+                label: "Commission",
+                value: order.commissionAmount
+                  ? `${fmt(order.commissionAmount)} (${order.commissionRate}%)`
+                  : null,
+              },
               { label: "Seller Receives", value: fmt(order.sellerEarnings) },
             ]
               .filter((r) => r.value)
               .map(({ label, value }) => (
-                <div key={label} className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 first:border-0">
-                  <span className="text-xs text-slate-500 font-medium">{label}</span>
-                  <span className="text-xs text-slate-800 font-semibold">{value}</span>
+                <div
+                  key={label}
+                  className="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 first:border-0"
+                >
+                  <span className="text-xs text-slate-500 font-medium">
+                    {label}
+                  </span>
+                  <span className="text-xs text-slate-800 font-semibold">
+                    {value}
+                  </span>
                 </div>
               ))}
             <div className="flex items-center justify-between px-4 py-3 bg-[#1132d4]/5 border-t border-[#1132d4]/10">
-              <span className="text-sm font-bold text-slate-800">Total Paid</span>
-              <span className="text-sm font-extrabold text-[#1132d4]">{fmt(order.salePrice)}</span>
+              <span className="text-sm font-bold text-slate-800">
+                Total Paid
+              </span>
+              <span className="text-sm font-extrabold text-[#1132d4]">
+                {fmt(order.salePrice)}
+              </span>
             </div>
           </div>
 
@@ -1423,7 +1728,9 @@ function OrderDetailModal({ order, onClose, onCancelled }) {
                   {order.seller.firstname} {order.seller.lastname}
                 </p>
                 {order.seller.email && (
-                  <p className="text-xs text-slate-400 truncate">{order.seller.email}</p>
+                  <p className="text-xs text-slate-400 truncate">
+                    {order.seller.email}
+                  </p>
                 )}
               </div>
             </div>
@@ -1479,31 +1786,37 @@ function OrderDetailModal({ order, onClose, onCancelled }) {
 
 // ─── Orders panel ─────────────────────────────────────────────────────────────
 function OrdersPanel() {
-  const [orders,       setOrders]      = useState(null);
-  const [loading,      setLoading]     = useState(true);
+  const [orders, setOrders] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null); // order detail modal
 
   const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-  const token    = localStorage.getItem("accessToken");
+  const token = localStorage.getItem("accessToken");
 
   const loadOrders = () => {
     setLoading(true);
     fetch(`${BASE_URL}/orders/my`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((r)  => r.json())
-      .then((d)  => setOrders(d.orders ?? []))
-      .catch(()  => setOrders([]))
+      .then((r) => r.json())
+      .then((d) => setOrders(d.orders ?? []))
+      .catch(() => setOrders([]))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadOrders(); }, []);
+  useEffect(() => {
+    loadOrders();
+  }, []);
 
   // After cancel: close modal, patch local state
   const handleCancelled = (orderId) => {
     setSelectedOrder(null);
     setOrders((prev) =>
-      prev.map((o) => (o._id === orderId ? { ...o, status: "cancelled", cancelledAt: new Date().toISOString() } : o))
+      prev.map((o) =>
+        o._id === orderId
+          ? { ...o, status: "cancelled", cancelledAt: new Date().toISOString() }
+          : o,
+      ),
     );
   };
 
@@ -1511,7 +1824,10 @@ function OrdersPanel() {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 rounded-2xl bg-slate-100 animate-pulse" />
+          <div
+            key={i}
+            className="h-20 rounded-2xl bg-slate-100 animate-pulse"
+          />
         ))}
       </div>
     );
@@ -1523,7 +1839,9 @@ function OrdersPanel() {
           <Ic d={I.orders} className="w-6 h-6" />
         </div>
         <p className="text-slate-700 font-semibold">No orders yet</p>
-        <p className="text-slate-400 text-sm mt-1">Your purchase history will appear here</p>
+        <p className="text-slate-400 text-sm mt-1">
+          Your purchase history will appear here
+        </p>
       </div>
     );
 
@@ -1531,7 +1849,7 @@ function OrdersPanel() {
     <>
       <div className="space-y-3">
         {orders.map((order) => {
-          const cfg      = ORDER_STATUS[order.status] ?? ORDER_STATUS.pending;
+          const cfg = ORDER_STATUS[order.status] ?? ORDER_STATUS.pending;
           const canCancel = order.status === "pending";
 
           return (
@@ -1539,15 +1857,20 @@ function OrdersPanel() {
               key={order._id}
               onClick={() => setSelectedOrder(order)}
               className={`flex items-center gap-4 bg-white rounded-2xl border p-4 cursor-pointer transition-all group
-                ${canCancel
-                  ? "border-amber-200 hover:border-amber-300 hover:shadow-[0_2px_12px_rgba(245,158,11,0.12)]"
-                  : "border-slate-200 hover:border-[#1132d4]/30 hover:shadow-[0_2px_12px_rgba(17,50,212,0.08)]"
+                ${
+                  canCancel
+                    ? "border-amber-200 hover:border-amber-300 hover:shadow-[0_2px_12px_rgba(245,158,11,0.12)]"
+                    : "border-slate-200 hover:border-[#1132d4]/30 hover:shadow-[0_2px_12px_rgba(17,50,212,0.08)]"
                 }`}
             >
               {/* Thumbnail */}
               <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
                 {order.product?.images?.[0] ? (
-                  <img src={order.product.images[0]} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={order.product.images[0]}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <span className="text-xl opacity-25">📦</span>
                 )}
@@ -1564,7 +1887,9 @@ function OrdersPanel() {
                 <p className="text-xs text-slate-400 mt-0.5">
                   {order.createdAt
                     ? new Date(order.createdAt).toLocaleDateString("en-IN", {
-                        day: "numeric", month: "short", year: "numeric",
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
                       })
                     : "—"}
                 </p>
@@ -1572,7 +1897,9 @@ function OrdersPanel() {
 
               {/* Status + price + tap hint */}
               <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
-                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border capitalize ${cfg.pill}`}>
+                <span
+                  className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border capitalize ${cfg.pill}`}
+                >
                   {cfg.label}
                 </span>
                 <span className="text-base font-extrabold text-slate-900">
@@ -1588,8 +1915,18 @@ function OrdersPanel() {
                 {!canCancel && (
                   <span className="text-xs text-slate-400 font-medium flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     View details
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </span>
                 )}

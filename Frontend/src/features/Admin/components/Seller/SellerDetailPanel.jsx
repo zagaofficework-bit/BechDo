@@ -2,129 +2,32 @@ import Avatar from "../common/Avatar";
 import StatusBadge from "../common/StatusBadge";
 import PlanBadge from "../common/PlanBadge";
 
-const SellerDetailPanel = ({ seller: s, onClose, onAction }) => {
-  if (!s) return null;
-  const sub     = s.subscription;
-  const PLAN_CFG = {
-  basic: {
-    color: "text-emerald-700",
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
-    bar: "bg-emerald-500",
-  },
-  standard: {
-    color: "text-amber-700",
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-    bar: "bg-amber-500",
-  },
-  premium: {
-    color: "text-[#1132d4]",
-    bg: "bg-blue-50",
-    border: "border-blue-200",
-    bar: "bg-[#1132d4]",
-  },
-  "—": {
-    color: "text-slate-500",
-    bg: "bg-slate-100",
-    border: "border-slate-200",
-    bar: "bg-slate-300",
-  },
+const PLAN_CFG = {
+  basic:    { color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", bar: "bg-emerald-500" },
+  standard: { color: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200",   bar: "bg-amber-500"   },
+  premium:  { color: "text-[#1132d4]",   bg: "bg-blue-50",    border: "border-blue-200",    bar: "bg-[#1132d4]"   },
+  "—":      { color: "text-slate-500",   bg: "bg-slate-100",  border: "border-slate-200",   bar: "bg-slate-300"   },
 };
 
 const STATUS_CFG = {
-  active: {
-    color: "text-emerald-700",
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
-    dot: "bg-emerald-500",
-    label: "Active",
-  },
-  suspended: {
-    color: "text-amber-700",
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-    dot: "bg-amber-500",
-    label: "Suspended",
-  },
-  banned: {
-    color: "text-red-600",
-    bg: "bg-red-50",
-    border: "border-red-200",
-    dot: "bg-red-500",
-    label: "Banned",
-  },
-  expired: {
-    color: "text-slate-500",
-    bg: "bg-slate-100",
-    border: "border-slate-200",
-    dot: "bg-slate-400",
-    label: "Expired",
-  },
-  revoked: {
-    color: "text-red-600",
-    bg: "bg-red-50",
-    border: "border-red-200",
-    dot: "bg-red-400",
-    label: "Revoked",
-  },
-  pending: {
-    color: "text-amber-700",
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-    dot: "bg-amber-500",
-    label: "Pending",
-  },
-  confirmed: {
-    color: "text-blue-700",
-    bg: "bg-blue-50",
-    border: "border-blue-200",
-    dot: "bg-blue-500",
-    label: "Confirmed",
-  },
-  shipped: {
-    color: "text-indigo-700",
-    bg: "bg-indigo-50",
-    border: "border-indigo-200",
-    dot: "bg-indigo-500",
-    label: "Shipped",
-  },
-  delivered: {
-    color: "text-emerald-700",
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
-    dot: "bg-emerald-500",
-    label: "Delivered",
-  },
-  rejected: {
-    color: "text-red-600",
-    bg: "bg-red-50",
-    border: "border-red-200",
-    dot: "bg-red-500",
-    label: "Rejected",
-  },
-  cancelled: {
-    color: "text-slate-500",
-    bg: "bg-slate-100",
-    border: "border-slate-200",
-    dot: "bg-slate-400",
-    label: "Cancelled",
-  },
-  completed: {
-    color: "text-emerald-700",
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
-    dot: "bg-emerald-500",
-    label: "Completed",
-  },
-  refunded: {
-    color: "text-slate-500",
-    bg: "bg-slate-100",
-    border: "border-slate-200",
-    dot: "bg-slate-400",
-    label: "Refunded",
-  },
+  active:    { color: "text-emerald-700", bg: "bg-emerald-50",  border: "border-emerald-200", dot: "bg-emerald-500", label: "Active"    },
+  suspended: { color: "text-amber-700",   bg: "bg-amber-50",    border: "border-amber-200",   dot: "bg-amber-500",   label: "Suspended" },
+  banned:    { color: "text-red-600",     bg: "bg-red-50",      border: "border-red-200",     dot: "bg-red-500",     label: "Banned"    },
+  expired:   { color: "text-slate-500",   bg: "bg-slate-100",   border: "border-slate-200",   dot: "bg-slate-400",   label: "Expired"   },
+  revoked:   { color: "text-red-600",     bg: "bg-red-50",      border: "border-red-200",     dot: "bg-red-400",     label: "Revoked"   },
+  pending:   { color: "text-amber-700",   bg: "bg-amber-50",    border: "border-amber-200",   dot: "bg-amber-500",   label: "Pending"   },
+  confirmed: { color: "text-blue-700",    bg: "bg-blue-50",     border: "border-blue-200",    dot: "bg-blue-500",    label: "Confirmed" },
+  shipped:   { color: "text-indigo-700",  bg: "bg-indigo-50",   border: "border-indigo-200",  dot: "bg-indigo-500",  label: "Shipped"   },
+  delivered: { color: "text-emerald-700", bg: "bg-emerald-50",  border: "border-emerald-200", dot: "bg-emerald-500", label: "Delivered" },
+  rejected:  { color: "text-red-600",     bg: "bg-red-50",      border: "border-red-200",     dot: "bg-red-500",     label: "Rejected"  },
+  cancelled: { color: "text-slate-500",   bg: "bg-slate-100",   border: "border-slate-200",   dot: "bg-slate-400",   label: "Cancelled" },
+  completed: { color: "text-emerald-700", bg: "bg-emerald-50",  border: "border-emerald-200", dot: "bg-emerald-500", label: "Completed" },
+  refunded:  { color: "text-slate-500",   bg: "bg-slate-100",   border: "border-slate-200",   dot: "bg-slate-400",   label: "Refunded"  },
 };
+
+const SellerDetailPanel = ({ seller: s, onClose, onAction }) => {
+  if (!s) return null;
+  const sub     = s.subscription;
   const planKey = sub.plan?.toLowerCase() ?? "—";
   const planCfg = PLAN_CFG[planKey] || PLAN_CFG["—"];
   const progressPct =

@@ -28,51 +28,98 @@
 
 "use strict";
 
-const mongoose    = require("mongoose");
-const cloudinary  = require("cloudinary").v2;
-const AdmZip      = require("adm-zip");
+const mongoose = require("mongoose");
+const cloudinary = require("cloudinary").v2;
+const AdmZip = require("adm-zip");
 const { execSync } = require("child_process");
-const path        = require("path");
-const fs          = require("fs");
+const path = require("path");
+const fs = require("fs");
 
 const EvaluationConfig = require("../models/evaluationConfig.model");
-const DeviceCatalog    = require("../models/deviceCatalog.model");
+const DeviceCatalog = require("../models/deviceCatalog.model");
 
 require("dotenv").config();
 
 // ─── Cloudinary setup ─────────────────────────────────────────────────────────
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_NAME,
-  api_key:    process.env.CLOUDINARY_KEY,
+  api_key: process.env.CLOUDINARY_KEY,
   api_secret: process.env.CLOUDINARY_SECRET,
 });
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/cashify_backend";
+const MONGO_URI =
+  process.env.MONGO_URI || "mongodb://localhost:27017/cashify_backend";
 
 // ─── Word-doc → brand config ──────────────────────────────────────────────────
 // docxPath is relative to this seed file's location
 const DOCS_DIR = path.join(__dirname, "docs");
 
 const IMAGE_DOCS = [
-  { docxPath: path.join(DOCS_DIR, "apple_mobillist.docx"),  brand: "Apple",     category: "mobile" },
-  { docxPath: path.join(DOCS_DIR, "google_mobillist.docx"), brand: "Google",    category: "mobile" },
-  { docxPath: path.join(DOCS_DIR, "moto_mobillist.docx"),   brand: "Motorola",  category: "mobile" },
-  { docxPath: path.join(DOCS_DIR, "nokia_mobillist.docx"),  brand: "Nokia",     category: "mobile" },
-  { docxPath: path.join(DOCS_DIR, "nothing_mobillist.docx"),  brand: "Nothing",      category: "mobile" },
-  { docxPath: path.join(DOCS_DIR, "onepluse_mobillist.docx"),    brand: "OnePlus",        category: "mobile" },
-  { docxPath: path.join(DOCS_DIR, "oppo_mobillist.docx"), brand: "Oppo",    category: "mobile" },
-  { docxPath: path.join(DOCS_DIR, "poco_mobillist.docx"),   brand: "Poco",      category: "mobile" },
-  { docxPath: path.join(DOCS_DIR, "realmi_mobillist.docx"), brand: "Realme",   category: "mobile" },
-  { docxPath: path.join(DOCS_DIR, "sammobillist.docx"),   brand: "Samsung",   category: "mobile" },
-  { docxPath: path.join(DOCS_DIR, "vivo_mobillist.docx"),   brand: "Vivo",      category: "mobile" },
-  { docxPath: path.join(DOCS_DIR, "xiomi_mobillist.docx"), brand: "Xiaomi",   category: "mobile" },
+  {
+    docxPath: path.join(DOCS_DIR, "apple_mobillist.docx"),
+    brand: "Apple",
+    category: "mobile",
+  },
+  {
+    docxPath: path.join(DOCS_DIR, "google_mobillist.docx"),
+    brand: "Google",
+    category: "mobile",
+  },
+  {
+    docxPath: path.join(DOCS_DIR, "moto_mobillist.docx"),
+    brand: "Motorola",
+    category: "mobile",
+  },
+  {
+    docxPath: path.join(DOCS_DIR, "nokia_mobillist.docx"),
+    brand: "Nokia",
+    category: "mobile",
+  },
+  {
+    docxPath: path.join(DOCS_DIR, "nothing_mobillist.docx"),
+    brand: "Nothing",
+    category: "mobile",
+  },
+  {
+    docxPath: path.join(DOCS_DIR, "onepluse_mobillist.docx"),
+    brand: "OnePlus",
+    category: "mobile",
+  },
+  {
+    docxPath: path.join(DOCS_DIR, "oppo_mobillist.docx"),
+    brand: "Oppo",
+    category: "mobile",
+  },
+  {
+    docxPath: path.join(DOCS_DIR, "poco_mobillist.docx"),
+    brand: "Poco",
+    category: "mobile",
+  },
+  {
+    docxPath: path.join(DOCS_DIR, "realmi_mobillist.docx"),
+    brand: "Realme",
+    category: "mobile",
+  },
+  {
+    docxPath: path.join(DOCS_DIR, "sammobillist.docx"),
+    brand: "Samsung",
+    category: "mobile",
+  },
+  {
+    docxPath: path.join(DOCS_DIR, "vivo_mobillist.docx"),
+    brand: "Vivo",
+    category: "mobile",
+  },
+  {
+    docxPath: path.join(DOCS_DIR, "xiomi_mobillist.docx"),
+    brand: "Xiaomi",
+    category: "mobile",
+  },
 ];
 
 const SPEC_DOCS = {
   Samsung: path.join(DOCS_DIR, "Samsung_Galaxy_Complete_Specs.docx"),
 };
-
-
 
 // ─── Parse a .docx → [{ name, imageFile }] ───────────────────────────────────
 // Pure Node.js approach - no python needed. Parses the XML directly using adm-zip.
@@ -92,7 +139,7 @@ function parseDocx(docxPath) {
   // Build rId → image filename map from relationships
   const relMap = {};
   const relMatches = relsXml.matchAll(
-    /Id="(rId\d+)"[^>]*Target="media\/([^"]+)"/g
+    /Id="(rId\d+)"[^>]*Target="media\/([^"]+)"/g,
   );
   for (const m of relMatches) {
     relMap[m[1]] = m[2]; // e.g. relMap["rId5"] = "image1.png"
@@ -113,7 +160,10 @@ function parseDocx(docxPath) {
 
     // Extract plain text from <w:t> tags
     const textMatches = [...para.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)];
-    const text = textMatches.map((m) => m[1]).join("").trim();
+    const text = textMatches
+      .map((m) => m[1])
+      .join("")
+      .trim();
 
     if (imageFile) {
       pending = imageFile;
@@ -141,7 +191,10 @@ const parseSpecDoc = (docxPath) => {
 
     for (const cell of cellBlocks.slice(1)) {
       const textMatches = [...cell.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)];
-      const text = textMatches.map(m => m[1]).join("").trim();
+      const text = textMatches
+        .map((m) => m[1])
+        .join("")
+        .trim();
       if (text) cells.push(text);
     }
 
@@ -151,8 +204,14 @@ const parseSpecDoc = (docxPath) => {
     if (/model name/i.test(modelName)) continue;
 
     specMap[modelName.trim()] = {
-      rams:     ramRaw.split(",").map(s => s.trim()).filter(Boolean),
-      storages: storageRaw.split(",").map(s => s.trim()).filter(Boolean),
+      rams: ramRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      storages: storageRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
     };
   }
 
@@ -164,16 +223,28 @@ function uploadToCloudinary(buffer, publicId) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        folder:         "cashify/models",
-        public_id:      publicId,
-        resource_type:  "image",
-        overwrite:      true,
+        folder: "cashify/models",
+        public_id: publicId,
+        resource_type: "image",
+        overwrite: true,
         transformation: [{ quality: "auto", fetch_format: "auto" }],
       },
-      (err, result) => (err ? reject(err) : resolve(result.secure_url))
+      (err, result) => (err ? reject(err) : resolve(result.secure_url)),
     );
     stream.end(buffer);
   });
+}
+
+async function getExistingImage(publicId) {
+  try {
+    const result = await cloudinary.api.resource(publicId);
+    return result.secure_url; // already uploaded
+  } catch (err) {
+    if (err.http_code === 404) {
+      return null; // not found → upload needed
+    }
+    throw err; // real error
+  }
 }
 
 function buildModels(imageMap, brand) {
@@ -197,7 +268,10 @@ function buildModels(imageMap, brand) {
 
 // ─── Build slug for Cloudinary public_id ─────────────────────────────────────
 function toSlug(str) {
-  return str.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 }
 
 /**
@@ -233,20 +307,34 @@ async function uploadAllImages() {
         continue;
       }
 
-      const publicId = `${toSlug(brand)}_${toSlug(docName)}`;
-      let url;
-      try {
-        url = await uploadToCloudinary(entry.getData(), publicId);
-        console.log(`     ☁️  ${docName.padEnd(40)} → uploaded`);
-      } catch (err) {
-        console.error(`     ❌ Cloudinary failed for "${docName}": ${err.message}`);
-        continue;
-      }
+      const publicId = `cashify/models/${toSlug(brand)}_${toSlug(docName)}`
+      let url = null;
 
-      // Store under the full doc name AND the brand-stripped short name
-      imageMap[brand][docName] = url;
-      const shortName = docName.replace(new RegExp(`^${brand}\\s+`, "i"), "").trim();
-      imageMap[brand][shortName] = url;
+// STEP 1: Try Cloudinary
+try {
+  url = await getExistingImage(publicId);
+} catch (err) {
+  console.warn(`⚠️ Cloudinary check failed for "${docName}"`);
+}
+
+// STEP 2: If not found → use fallback
+if (!url) {
+  console.log(`⏭️ No Cloudinary image, using fallback for ${docName}`);
+
+  // 👉 fallback (safe default)
+  url = "https://via.placeholder.com/300x300?text=No+Image";
+}
+
+// STEP 3: Always store (IMPORTANT)
+console.log(`✅ Image set for ${docName}`);
+
+imageMap[brand][docName] = url;
+
+const shortName = docName
+  .replace(new RegExp(`^${brand}\\s+`, "i"), "")
+  .trim();
+
+imageMap[brand][shortName] = url;
     }
   }
 
@@ -330,19 +418,22 @@ const IMG = {
     <line x1="68" y1="70" x2="58" y2="82" stroke="${T}" stroke-width="2.5" stroke-linecap="round"/>
     <line x1="60" y1="50" x2="72" y2="56" stroke="${T}" stroke-width="1.5" stroke-linecap="round"/>
     <line x1="58" y1="82" x2="66" y2="88" stroke="${T}" stroke-width="1.5" stroke-linecap="round"/>`),
-  mobile_body_dents: svg(`<rect x="32" y="6" width="56" height="108" rx="9" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  mobile_body_dents:
+    svg(`<rect x="32" y="6" width="56" height="108" rx="9" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <rect x="38" y="16" width="44" height="76" rx="3" fill="#f8fafc" stroke="#1e293b" stroke-width="1.5"/>
     <circle cx="60" cy="103" r="4" stroke="#1e293b" stroke-width="1.5"/>
     <path d="M32 48 C28 50 26 54 28 58 C30 62 32 62 32 62" stroke="${T}" stroke-width="2.5" stroke-linecap="round" fill="none"/>
     <circle cx="28" cy="53" r="3" fill="${T}" opacity="0.3"/>
     <path d="M88 68 C92 66 94 70 92 74 C90 78 88 77 88 77" stroke="${T}" stroke-width="2.5" stroke-linecap="round" fill="none"/>`),
-  mobile_body_scratches: svg(`<rect x="32" y="6" width="56" height="108" rx="9" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  mobile_body_scratches:
+    svg(`<rect x="32" y="6" width="56" height="108" rx="9" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <rect x="38" y="16" width="44" height="76" rx="3" fill="#f8fafc" stroke="#1e293b" stroke-width="1.5"/>
     <circle cx="60" cy="103" r="4" stroke="#1e293b" stroke-width="1.5"/>
     <line x1="36" y1="40" x2="40" y2="60" stroke="${T}" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
     <line x1="34" y1="55" x2="37" y2="68" stroke="${T}" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
     <line x1="84" y1="50" x2="87" y2="70" stroke="${T}" stroke-width="2" stroke-linecap="round" opacity="0.7"/>`),
-  mobile_frame_bent: svg(`<rect x="32" y="6" width="56" height="108" rx="9" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  mobile_frame_bent:
+    svg(`<rect x="32" y="6" width="56" height="108" rx="9" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <rect x="38" y="16" width="44" height="76" rx="3" fill="#f8fafc" stroke="#1e293b" stroke-width="1.5"/>
     <circle cx="60" cy="103" r="4" stroke="#1e293b" stroke-width="1.5"/>
     <path d="M32 60 C28 62 26 70 30 74 C34 78 36 76 38 74" stroke="${T}" stroke-width="2.5" stroke-linecap="round" fill="none"/>
@@ -446,7 +537,8 @@ const IMG = {
     <rect x="40" y="100" width="40" height="5" rx="1" fill="#f1f5f9" stroke="${T}" stroke-width="1.5"/>
     <line x1="56" y1="101.5" x2="64" y2="104.5" stroke="${T}" stroke-width="2" stroke-linecap="round"/>
     <line x1="64" y1="101.5" x2="56" y2="104.5" stroke="${T}" stroke-width="2" stroke-linecap="round"/>`),
-  laptop_hinge: svg(`<rect x="10" y="58" width="100" height="48" rx="5" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  laptop_hinge:
+    svg(`<rect x="10" y="58" width="100" height="48" rx="5" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <rect x="16" y="64" width="88" height="32" rx="2" fill="#f8fafc" stroke="#1e293b" stroke-width="1.5"/>
     <rect x="5" y="106" width="110" height="8" rx="3" fill="white" stroke="#1e293b" stroke-width="2"/>
     <path d="M10 58 C10 30 14 18 30 14" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round" fill="none"/>
@@ -529,7 +621,8 @@ const IMG = {
     <line x1="30" y1="50" x2="90" y2="50" stroke="${T}" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
     <line x1="30" y1="68" x2="90" y2="68" stroke="${T}" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
     <line x1="65" y1="16" x2="65" y2="104" stroke="${T}" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>`),
-  tablet_back_cracked: svg(`<rect x="22" y="6" width="76" height="108" rx="9" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  tablet_back_cracked:
+    svg(`<rect x="22" y="6" width="76" height="108" rx="9" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <rect x="55" y="10" width="10" height="3" rx="1.5" fill="#cbd5e1"/>
     <rect x="30" y="16" width="30" height="30" rx="5" fill="#f0f9ff" stroke="#1e293b" stroke-width="1.5"/>
     <circle cx="45" cy="31" r="8" fill="#e0f2fe" stroke="#1e293b" stroke-width="1.5"/>
@@ -648,7 +741,8 @@ const IMG = {
     <line x1="14" y1="38" x2="26" y2="54" stroke="${T}" stroke-width="2.5" stroke-linecap="round"/>
     <line x1="26" y1="54" x2="14" y2="66" stroke="${T}" stroke-width="2" stroke-linecap="round"/>
     <line x1="26" y1="54" x2="34" y2="58" stroke="${T}" stroke-width="1.5" stroke-linecap="round"/>`),
-  tv_stand_broken: svg(`<rect x="8" y="14" width="104" height="72" rx="5" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  tv_stand_broken:
+    svg(`<rect x="8" y="14" width="104" height="72" rx="5" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <rect x="14" y="20" width="92" height="60" rx="2" fill="#f8fafc" stroke="#1e293b" stroke-width="1.5"/>
     <path d="M44 86 L36 106 M76 86 L84 106" stroke="#1e293b" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 3"/>
     <rect x="32" y="106" width="56" height="5" rx="2.5" fill="white" stroke="${T}" stroke-width="2"/>
@@ -687,13 +781,15 @@ const IMG = {
     <text x="28" y="52" font-size="10" fill="${T}" font-family="sans-serif" opacity="0.8">NO SIGNAL</text>
     <circle cx="88" cy="36" r="6" fill="${T}" opacity="0.3"/>
     <text x="85.5" y="39.5" font-size="8" fill="${T}" font-family="sans-serif" font-weight="bold">!</text>`),
-  acc_box: svg(`<path d="M60 14 L100 34 L100 86 L60 106 L20 86 L20 34 Z" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  acc_box:
+    svg(`<path d="M60 14 L100 34 L100 86 L60 106 L20 86 L20 34 Z" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <path d="M60 14 L60 106" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="5 3"/>
     <path d="M20 34 L60 54 L100 34" stroke="#1e293b" stroke-width="2"/>
     <path d="M60 54 L60 106" stroke="#1e293b" stroke-width="2"/>
     <path d="M42 24 L58 32" stroke="${T}" stroke-width="2" stroke-linecap="round"/>
     <path d="M42 30 L58 38" stroke="${T}" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>`),
-  acc_charger: svg(`<rect x="38" y="12" width="44" height="36" rx="6" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  acc_charger:
+    svg(`<rect x="38" y="12" width="44" height="36" rx="6" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <rect x="46" y="6" width="8" height="8" rx="2" fill="white" stroke="#1e293b" stroke-width="2"/>
     <rect x="66" y="6" width="8" height="8" rx="2" fill="white" stroke="#1e293b" stroke-width="2"/>
     <path d="M60 48 L60 72" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
@@ -702,7 +798,8 @@ const IMG = {
     <rect x="50" y="88" width="20" height="8" rx="3" fill="white" stroke="${T}" stroke-width="2"/>
     <rect x="57" y="96" width="6" height="14" rx="2" fill="white" stroke="#1e293b" stroke-width="2"/>
     <path d="M54 102 L66 102" stroke="${T}" stroke-width="2" stroke-linecap="round"/>`),
-  acc_invoice: svg(`<rect x="26" y="10" width="68" height="90" rx="6" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  acc_invoice:
+    svg(`<rect x="26" y="10" width="68" height="90" rx="6" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <path d="M54 10 L54 28 L80 28" stroke="#1e293b" stroke-width="2"/>
     <path d="M54 10 L80 28 L80 100 L26 100 L26 10 Z" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <line x1="36" y1="44" x2="74" y2="44" stroke="${T}" stroke-width="2" stroke-linecap="round"/>
@@ -711,7 +808,8 @@ const IMG = {
     <line x1="36" y1="74" x2="60" y2="74" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round"/>
     <rect x="36" y="80" width="20" height="10" rx="2" fill="${T}" opacity="0.15"/>
     <line x1="36" y1="85" x2="56" y2="85" stroke="${T}" stroke-width="2" stroke-linecap="round"/>`),
-  acc_strap: svg(`<rect x="46" y="28" width="28" height="28" rx="6" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  acc_strap:
+    svg(`<rect x="46" y="28" width="28" height="28" rx="6" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <rect x="50" y="32" width="20" height="20" rx="3" fill="#f8fafc" stroke="#1e293b" stroke-width="1.5"/>
     <rect x="50" y="6" width="20" height="22" rx="5" fill="${T}" opacity="0.15" stroke="${T}" stroke-width="2"/>
     <rect x="54" y="9" width="12" height="3" rx="1.5" fill="${T}" opacity="0.5"/>
@@ -719,7 +817,8 @@ const IMG = {
     <rect x="50" y="56" width="20" height="22" rx="5" fill="${T}" opacity="0.15" stroke="${T}" stroke-width="2"/>
     <rect x="54" y="59" width="12" height="3" rx="1.5" fill="${T}" opacity="0.5"/>
     <rect x="54" y="64" width="12" height="3" rx="1.5" fill="${T}" opacity="0.3"/>`),
-  acc_remote: svg(`<rect x="38" y="8" width="44" height="96" rx="14" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  acc_remote:
+    svg(`<rect x="38" y="8" width="44" height="96" rx="14" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <circle cx="60" cy="34" r="12" fill="#f0f9ff" stroke="${T}" stroke-width="2"/>
     <circle cx="60" cy="34" r="5" fill="${T}" opacity="0.3"/>
     <circle cx="48" cy="56" r="5" fill="#f1f5f9" stroke="#1e293b" stroke-width="1.5"/>
@@ -730,31 +829,36 @@ const IMG = {
     <circle cx="72" cy="70" r="5" fill="#f1f5f9" stroke="#1e293b" stroke-width="1.5"/>
     <rect x="48" y="82" width="24" height="5" rx="2.5" fill="#f1f5f9" stroke="#1e293b" stroke-width="1.5"/>
     <rect x="48" y="92" width="24" height="5" rx="2.5" fill="#f1f5f9" stroke="#1e293b" stroke-width="1.5"/>`),
-  acc_stand: svg(`<rect x="8" y="14" width="104" height="58" rx="4" fill="white" stroke="#1e293b" stroke-width="2"/>
+  acc_stand:
+    svg(`<rect x="8" y="14" width="104" height="58" rx="4" fill="white" stroke="#1e293b" stroke-width="2"/>
     <rect x="14" y="20" width="92" height="46" rx="2" fill="#f8fafc" stroke="#1e293b" stroke-width="1.5"/>
     <path d="M42 72 L36 96 M78 72 L84 96" stroke="${T}" stroke-width="2.5" stroke-linecap="round"/>
     <rect x="30" y="96" width="60" height="8" rx="3" fill="white" stroke="${T}" stroke-width="2"/>
     <line x1="36" y1="92" x2="84" y2="92" stroke="#e2e8f0" stroke-width="1.5"/>`),
-  acc_cable: svg(`<path d="M28 40 C28 34 32 28 40 28 L80 28 C88 28 92 34 92 40" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  acc_cable:
+    svg(`<path d="M28 40 C28 34 32 28 40 28 L80 28 C88 28 92 34 92 40" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round" fill="none"/>
     <rect x="24" y="40" width="16" height="10" rx="3" fill="white" stroke="#1e293b" stroke-width="2"/>
     <rect x="80" y="40" width="16" height="10" rx="3" fill="white" stroke="${T}" stroke-width="2"/>
     <line x1="82" y1="42" x2="94" y2="50" stroke="${T}" stroke-width="2" stroke-linecap="round"/>
     <path d="M28 50 C28 70 32 80 36 90 M92 50 C92 70 88 80 84 90" stroke="#1e293b" stroke-width="2" stroke-linecap="round" fill="none"/>
     <rect x="30" y="88" width="12" height="8" rx="2" fill="white" stroke="#1e293b" stroke-width="2"/>
     <rect x="78" y="88" width="12" height="8" rx="2" fill="white" stroke="${T}" stroke-width="2"/>`),
-  acc_stylus: svg(`<rect x="54" y="10" width="12" height="80" rx="6" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  acc_stylus:
+    svg(`<rect x="54" y="10" width="12" height="80" rx="6" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <path d="M54 90 L60 108 L66 90" fill="white" stroke="#1e293b" stroke-width="2" stroke-linejoin="round"/>
     <rect x="56" y="14" width="8" height="3" rx="1.5" fill="${T}" opacity="0.5"/>
     <circle cx="60" cy="26" r="3" fill="${T}" opacity="0.3" stroke="${T}" stroke-width="1.5"/>
     <line x1="57" y1="105" x2="63" y2="105" stroke="${T}" stroke-width="2" stroke-linecap="round"/>`),
-  acc_earphones: svg(`<path d="M36 60 C36 36 44 22 60 20 C76 22 84 36 84 60" stroke="#1e293b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  acc_earphones:
+    svg(`<path d="M36 60 C36 36 44 22 60 20 C76 22 84 36 84 60" stroke="#1e293b" stroke-width="2.5" fill="none" stroke-linecap="round"/>
     <circle cx="36" cy="64" r="10" fill="white" stroke="#1e293b" stroke-width="2"/>
     <circle cx="36" cy="64" r="5" fill="${T}" opacity="0.3" stroke="${T}" stroke-width="1.5"/>
     <circle cx="84" cy="64" r="10" fill="white" stroke="#1e293b" stroke-width="2"/>
     <circle cx="84" cy="64" r="5" fill="${T}" opacity="0.3" stroke="${T}" stroke-width="1.5"/>
     <circle cx="60" cy="82" r="6" fill="white" stroke="#1e293b" stroke-width="2"/>
     <path d="M60 76 L60 70" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>`),
-  acc_keyboard: svg(`<rect x="10" y="32" width="100" height="56" rx="6" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  acc_keyboard:
+    svg(`<rect x="10" y="32" width="100" height="56" rx="6" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <rect x="16" y="40" width="12" height="8" rx="2" fill="#f1f5f9" stroke="#1e293b" stroke-width="1"/>
     <rect x="32" y="40" width="12" height="8" rx="2" fill="#f1f5f9" stroke="#1e293b" stroke-width="1"/>
     <rect x="48" y="40" width="12" height="8" rx="2" fill="#f1f5f9" stroke="#1e293b" stroke-width="1"/>
@@ -765,7 +869,8 @@ const IMG = {
     <rect x="48" y="54" width="28" height="8" rx="2" fill="#f1f5f9" stroke="#1e293b" stroke-width="1"/>
     <rect x="80" y="54" width="12" height="8" rx="2" fill="#f1f5f9" stroke="#1e293b" stroke-width="1"/>
     <rect x="28" y="68" width="64" height="8" rx="2" fill="#f1f5f9" stroke="#1e293b" stroke-width="1"/>`),
-  acc_mouse: svg(`<path d="M40 60 C40 36 50 20 60 18 C70 20 80 36 80 60 C80 80 72 100 60 100 C48 100 40 80 40 60Z" fill="white" stroke="#1e293b" stroke-width="2.5"/>
+  acc_mouse:
+    svg(`<path d="M40 60 C40 36 50 20 60 18 C70 20 80 36 80 60 C80 80 72 100 60 100 C48 100 40 80 40 60Z" fill="white" stroke="#1e293b" stroke-width="2.5"/>
     <line x1="60" y1="18" x2="60" y2="58" stroke="#1e293b" stroke-width="1.5"/>
     <circle cx="60" cy="54" r="5" fill="${T}" opacity="0.3" stroke="${T}" stroke-width="1.5"/>
     <path d="M60 6 L60 12" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
@@ -816,15 +921,17 @@ function getBasePrice(name, brand, ram = null, storage = null) {
   const gen = match ? parseInt(match[0]) : 10;
 
   // RAM/Storage price modifiers (used when real specs are available)
-  const ramBonus = ram ? (parseInt(ram) - 6) * 800 : 0;      // e.g. 12GB = +4800 over 6GB baseline
-  const storageBonus = storage ? (() => {
-    const gb = parseInt(storage);
-    if (gb >= 1000) return 12000; // 1TB
-    if (gb >= 512)  return 7000;
-    if (gb >= 256)  return 3000;
-    if (gb >= 128)  return 1000;
-    return 0;
-  })() : 0;
+  const ramBonus = ram ? (parseInt(ram) - 6) * 800 : 0; // e.g. 12GB = +4800 over 6GB baseline
+  const storageBonus = storage
+    ? (() => {
+        const gb = parseInt(storage);
+        if (gb >= 1000) return 12000; // 1TB
+        if (gb >= 512) return 7000;
+        if (gb >= 256) return 3000;
+        if (gb >= 128) return 1000;
+        return 0;
+      })()
+    : 0;
 
   // ─────────────────────────────────────────
   // 🍎 APPLE (Premium depreciation curve)
@@ -848,17 +955,17 @@ function getBasePrice(name, brand, ram = null, storage = null) {
   // ─────────────────────────────────────────
   if (brand === "Samsung") {
     let base;
-    if (/ultra|fold|flip.*7|flip.*6/i.test(lower))  base = 40000 + gen * 3000;
-    else if (/flip|fold/i.test(lower))               base = 35000 + gen * 2500;
-    else if (/s\d+.*ultra|s\d+.*plus/i.test(lower))  base = 32000 + gen * 2800;
-    else if (/s\d+/i.test(lower))                    base = 28000 + gen * 2500;
-    else if (/note/i.test(lower))                    base = 25000 + gen * 2000;
-    else if (/a[5-7]\d/i.test(lower))               base = 18000 + gen * 1500;
-    else if (/a[3-4]\d/i.test(lower))               base = 12000 + gen * 1000;
-    else if (/a[0-2]\d|m[5-6]\d/i.test(lower))     base = 8000  + gen * 800;
-    else if (/m[3-4]\d/i.test(lower))               base = 7000  + gen * 700;
-    else if (/m[0-2]\d|f\d/i.test(lower))           base = 5000  + gen * 500;
-    else                                              base = 10000 + gen * 1000;
+    if (/ultra|fold|flip.*7|flip.*6/i.test(lower)) base = 40000 + gen * 3000;
+    else if (/flip|fold/i.test(lower)) base = 35000 + gen * 2500;
+    else if (/s\d+.*ultra|s\d+.*plus/i.test(lower)) base = 32000 + gen * 2800;
+    else if (/s\d+/i.test(lower)) base = 28000 + gen * 2500;
+    else if (/note/i.test(lower)) base = 25000 + gen * 2000;
+    else if (/a[5-7]\d/i.test(lower)) base = 18000 + gen * 1500;
+    else if (/a[3-4]\d/i.test(lower)) base = 12000 + gen * 1000;
+    else if (/a[0-2]\d|m[5-6]\d/i.test(lower)) base = 8000 + gen * 800;
+    else if (/m[3-4]\d/i.test(lower)) base = 7000 + gen * 700;
+    else if (/m[0-2]\d|f\d/i.test(lower)) base = 5000 + gen * 500;
+    else base = 10000 + gen * 1000;
 
     return Math.max(1500, base + ramBonus + storageBonus);
   }
@@ -956,7 +1063,9 @@ function buildCatalogSeed(imageMap) {
   for (const [brand, docPath] of Object.entries(SPEC_DOCS)) {
     if (fs.existsSync(docPath)) {
       specMaps[brand] = parseSpecDoc(docPath);
-      console.log(`📋 Loaded specs for ${brand}: ${Object.keys(specMaps[brand]).length} models`);
+      console.log(
+        `📋 Loaded specs for ${brand}: ${Object.keys(specMaps[brand]).length} models`,
+      );
     }
   }
 
@@ -993,59 +1102,224 @@ const evaluationConfigSeed = [
     category: "mobile",
     processingFee: 299,
     questions: [
-      { key: "device_turns_on",  label: "Does the device turn on and boot normally?",       order: 1, deductionOnNo: 60 },
-      { key: "touch_working",    label: "Is the touchscreen responsive and working?",        order: 2, deductionOnNo: 30 },
-      { key: "can_make_calls",   label: "Can the device make and receive calls?",            order: 3, deductionOnNo: 25 },
-      { key: "wifi_working",     label: "Is Wi-Fi connecting and working properly?",         order: 4, deductionOnNo: 15 },
-      { key: "fingerprint",      label: "Is the fingerprint / Face ID working?",             order: 5, deductionOnNo: 8  },
+      {
+        key: "device_turns_on",
+        label: "Does the device turn on and boot normally?",
+        order: 1,
+        deductionOnNo: 60,
+      },
+      {
+        key: "touch_working",
+        label: "Is the touchscreen responsive and working?",
+        order: 2,
+        deductionOnNo: 30,
+      },
+      {
+        key: "can_make_calls",
+        label: "Can the device make and receive calls?",
+        order: 3,
+        deductionOnNo: 25,
+      },
+      {
+        key: "wifi_working",
+        label: "Is Wi-Fi connecting and working properly?",
+        order: 4,
+        deductionOnNo: 15,
+      },
+      {
+        key: "fingerprint",
+        label: "Is the fingerprint / Face ID working?",
+        order: 5,
+        deductionOnNo: 8,
+      },
     ],
     defects: [
       {
-        key: "screen_damage", label: "Screen / Display Damage", image: IMG.mobile_screen_cracked, order: 1, deduction: 0,
+        key: "screen_damage",
+        label: "Screen / Display Damage",
+        image: IMG.mobile_screen_cracked,
+        order: 1,
+        deduction: 0,
         children: [
-          { key: "screen_cracked",       label: "Screen cracked or shattered",              image: IMG.mobile_screen_cracked,   deduction: 45 },
-          { key: "dead_pixels",          label: "Dead pixels or display lines",             image: IMG.mobile_dead_pixels,      deduction: 25 },
-          { key: "touch_unresponsive",   label: "Touchscreen partially unresponsive",       image: IMG.mobile_touch,            deduction: 35 },
-          { key: "display_lines",        label: "Horizontal or vertical lines on screen",   image: IMG.mobile_display_lines,    deduction: 25 },
-          { key: "burn_in",              label: "Screen burn-in or ghost image",            image: IMG.mobile_burn_in,          deduction: 20 },
+          {
+            key: "screen_cracked",
+            label: "Screen cracked or shattered",
+            image: IMG.mobile_screen_cracked,
+            deduction: 45,
+          },
+          {
+            key: "dead_pixels",
+            label: "Dead pixels or display lines",
+            image: IMG.mobile_dead_pixels,
+            deduction: 25,
+          },
+          {
+            key: "touch_unresponsive",
+            label: "Touchscreen partially unresponsive",
+            image: IMG.mobile_touch,
+            deduction: 35,
+          },
+          {
+            key: "display_lines",
+            label: "Horizontal or vertical lines on screen",
+            image: IMG.mobile_display_lines,
+            deduction: 25,
+          },
+          {
+            key: "burn_in",
+            label: "Screen burn-in or ghost image",
+            image: IMG.mobile_burn_in,
+            deduction: 20,
+          },
         ],
       },
       {
-        key: "body_damage", label: "Body / Frame Damage", image: IMG.mobile_body_dents, order: 2, deduction: 0,
+        key: "body_damage",
+        label: "Body / Frame Damage",
+        image: IMG.mobile_body_dents,
+        order: 2,
+        deduction: 0,
         children: [
-          { key: "back_cracked",    label: "Back panel cracked",          image: IMG.mobile_back_cracked,    deduction: 15 },
-          { key: "body_dents",      label: "Significant dents on frame",  image: IMG.mobile_body_dents,      deduction: 10 },
-          { key: "body_scratches",  label: "Deep scratches on body",      image: IMG.mobile_body_scratches,  deduction: 5  },
-          { key: "frame_bent",      label: "Frame or chassis bent",       image: IMG.mobile_frame_bent,      deduction: 25 },
+          {
+            key: "back_cracked",
+            label: "Back panel cracked",
+            image: IMG.mobile_back_cracked,
+            deduction: 15,
+          },
+          {
+            key: "body_dents",
+            label: "Significant dents on frame",
+            image: IMG.mobile_body_dents,
+            deduction: 10,
+          },
+          {
+            key: "body_scratches",
+            label: "Deep scratches on body",
+            image: IMG.mobile_body_scratches,
+            deduction: 5,
+          },
+          {
+            key: "frame_bent",
+            label: "Frame or chassis bent",
+            image: IMG.mobile_frame_bent,
+            deduction: 25,
+          },
         ],
       },
       {
-        key: "camera_damage", label: "Camera Issues", image: IMG.mobile_camera_broken, order: 3, deduction: 0,
+        key: "camera_damage",
+        label: "Camera Issues",
+        image: IMG.mobile_camera_broken,
+        order: 3,
+        deduction: 0,
         children: [
-          { key: "camera_glass_broken",  label: "Camera lens cracked or broken",      image: IMG.mobile_camera_broken,      deduction: 15 },
-          { key: "camera_not_working",   label: "Rear camera not working at all",     image: IMG.mobile_camera_notworking,  deduction: 30 },
-          { key: "front_camera_issue",   label: "Front camera not working",           image: IMG.mobile_front_camera,       deduction: 15 },
+          {
+            key: "camera_glass_broken",
+            label: "Camera lens cracked or broken",
+            image: IMG.mobile_camera_broken,
+            deduction: 15,
+          },
+          {
+            key: "camera_not_working",
+            label: "Rear camera not working at all",
+            image: IMG.mobile_camera_notworking,
+            deduction: 30,
+          },
+          {
+            key: "front_camera_issue",
+            label: "Front camera not working",
+            image: IMG.mobile_front_camera,
+            deduction: 15,
+          },
         ],
       },
       {
-        key: "hardware_issues", label: "Hardware / Functional Issues", image: IMG.mobile_charging_port, order: 4, deduction: 0,
+        key: "hardware_issues",
+        label: "Hardware / Functional Issues",
+        image: IMG.mobile_charging_port,
+        order: 4,
+        deduction: 0,
         children: [
-          { key: "charging_port_damaged",  label: "Charging port damaged or loose",    image: IMG.mobile_charging_port,  deduction: 15 },
-          { key: "speaker_issue",          label: "Speaker not working or muffled",    image: IMG.mobile_speaker,        deduction: 10 },
-          { key: "microphone_issue",       label: "Microphone not working",            image: IMG.mobile_microphone,     deduction: 10 },
-          { key: "battery_drains_fast",    label: "Battery drains very fast",          image: IMG.mobile_battery,        deduction: 20 },
-          { key: "water_damage",           label: "Water or liquid damage",            image: IMG.mobile_water,          deduction: 50 },
-          { key: "overheating",            label: "Device overheats frequently",       image: IMG.mobile_overheating,    deduction: 18 },
-          { key: "wifi_issue",             label: "Wi-Fi or network issues",           image: IMG.mobile_wifi_issue,     deduction: 12 },
-          { key: "fingerprint_issue",      label: "Fingerprint / Face ID not working", image: IMG.mobile_fingerprint,   deduction: 10 },
+          {
+            key: "charging_port_damaged",
+            label: "Charging port damaged or loose",
+            image: IMG.mobile_charging_port,
+            deduction: 15,
+          },
+          {
+            key: "speaker_issue",
+            label: "Speaker not working or muffled",
+            image: IMG.mobile_speaker,
+            deduction: 10,
+          },
+          {
+            key: "microphone_issue",
+            label: "Microphone not working",
+            image: IMG.mobile_microphone,
+            deduction: 10,
+          },
+          {
+            key: "battery_drains_fast",
+            label: "Battery drains very fast",
+            image: IMG.mobile_battery,
+            deduction: 20,
+          },
+          {
+            key: "water_damage",
+            label: "Water or liquid damage",
+            image: IMG.mobile_water,
+            deduction: 50,
+          },
+          {
+            key: "overheating",
+            label: "Device overheats frequently",
+            image: IMG.mobile_overheating,
+            deduction: 18,
+          },
+          {
+            key: "wifi_issue",
+            label: "Wi-Fi or network issues",
+            image: IMG.mobile_wifi_issue,
+            deduction: 12,
+          },
+          {
+            key: "fingerprint_issue",
+            label: "Fingerprint / Face ID not working",
+            image: IMG.mobile_fingerprint,
+            deduction: 10,
+          },
         ],
       },
     ],
     accessories: [
-      { key: "original_box",      label: "Original box included",             image: IMG.acc_box,       order: 1, addition: 2 },
-      { key: "original_charger",  label: "Original charger included",         image: IMG.acc_charger,   order: 2, addition: 3 },
-      { key: "bill_invoice",      label: "Original purchase bill/invoice",    image: IMG.acc_invoice,   order: 3, addition: 3 },
-      { key: "earphones",         label: "Original earphones included",       image: IMG.acc_earphones, order: 4, addition: 1 },
+      {
+        key: "original_box",
+        label: "Original box included",
+        image: IMG.acc_box,
+        order: 1,
+        addition: 2,
+      },
+      {
+        key: "original_charger",
+        label: "Original charger included",
+        image: IMG.acc_charger,
+        order: 2,
+        addition: 3,
+      },
+      {
+        key: "bill_invoice",
+        label: "Original purchase bill/invoice",
+        image: IMG.acc_invoice,
+        order: 3,
+        addition: 3,
+      },
+      {
+        key: "earphones",
+        label: "Original earphones included",
+        image: IMG.acc_earphones,
+        order: 4,
+        addition: 1,
+      },
     ],
   },
 
@@ -1053,56 +1327,207 @@ const evaluationConfigSeed = [
     category: "laptop",
     processingFee: 599,
     questions: [
-      { key: "powers_on",         label: "Does the laptop power on normally?",                    order: 1, deductionOnNo: 65 },
-      { key: "display_working",   label: "Is the display working without lines or patches?",      order: 2, deductionOnNo: 35 },
-      { key: "keyboard_working",  label: "Are all keyboard keys functioning properly?",           order: 3, deductionOnNo: 20 },
-      { key: "wifi_working",      label: "Is Wi-Fi connecting and working properly?",             order: 4, deductionOnNo: 12 },
-      { key: "battery_charges",   label: "Does the battery charge normally?",                     order: 5, deductionOnNo: 25 },
+      {
+        key: "powers_on",
+        label: "Does the laptop power on normally?",
+        order: 1,
+        deductionOnNo: 65,
+      },
+      {
+        key: "display_working",
+        label: "Is the display working without lines or patches?",
+        order: 2,
+        deductionOnNo: 35,
+      },
+      {
+        key: "keyboard_working",
+        label: "Are all keyboard keys functioning properly?",
+        order: 3,
+        deductionOnNo: 20,
+      },
+      {
+        key: "wifi_working",
+        label: "Is Wi-Fi connecting and working properly?",
+        order: 4,
+        deductionOnNo: 12,
+      },
+      {
+        key: "battery_charges",
+        label: "Does the battery charge normally?",
+        order: 5,
+        deductionOnNo: 25,
+      },
     ],
     defects: [
       {
-        key: "display_damage", label: "Display Damage", image: IMG.laptop_screen_cracked, order: 1, deduction: 0,
+        key: "display_damage",
+        label: "Display Damage",
+        image: IMG.laptop_screen_cracked,
+        order: 1,
+        deduction: 0,
         children: [
-          { key: "screen_cracked",     label: "Screen cracked or broken",              image: IMG.laptop_screen_cracked,  deduction: 55 },
-          { key: "dead_pixels",        label: "Dead pixels or lines on screen",        image: IMG.laptop_dead_pixels,     deduction: 28 },
-          { key: "display_lines",      label: "Horizontal or vertical lines",          image: IMG.laptop_display_lines,   deduction: 25 },
-          { key: "backlight_issue",    label: "Backlight bleeding or dim display",     image: IMG.laptop_backlight,       deduction: 22 },
-          { key: "discoloration",      label: "Screen discoloration or staining",      image: IMG.laptop_discoloration,   deduction: 15 },
+          {
+            key: "screen_cracked",
+            label: "Screen cracked or broken",
+            image: IMG.laptop_screen_cracked,
+            deduction: 55,
+          },
+          {
+            key: "dead_pixels",
+            label: "Dead pixels or lines on screen",
+            image: IMG.laptop_dead_pixels,
+            deduction: 28,
+          },
+          {
+            key: "display_lines",
+            label: "Horizontal or vertical lines",
+            image: IMG.laptop_display_lines,
+            deduction: 25,
+          },
+          {
+            key: "backlight_issue",
+            label: "Backlight bleeding or dim display",
+            image: IMG.laptop_backlight,
+            deduction: 22,
+          },
+          {
+            key: "discoloration",
+            label: "Screen discoloration or staining",
+            image: IMG.laptop_discoloration,
+            deduction: 15,
+          },
         ],
       },
       {
-        key: "keyboard_trackpad", label: "Keyboard / Trackpad Issues", image: IMG.laptop_keyboard, order: 2, deduction: 0,
+        key: "keyboard_trackpad",
+        label: "Keyboard / Trackpad Issues",
+        image: IMG.laptop_keyboard,
+        order: 2,
+        deduction: 0,
         children: [
-          { key: "keys_not_working",       label: "Multiple keys not registering",  image: IMG.laptop_keyboard,  deduction: 22 },
-          { key: "trackpad_unresponsive",  label: "Trackpad not working",           image: IMG.laptop_trackpad,  deduction: 18 },
+          {
+            key: "keys_not_working",
+            label: "Multiple keys not registering",
+            image: IMG.laptop_keyboard,
+            deduction: 22,
+          },
+          {
+            key: "trackpad_unresponsive",
+            label: "Trackpad not working",
+            image: IMG.laptop_trackpad,
+            deduction: 18,
+          },
         ],
       },
       {
-        key: "body_damage", label: "Body / Chassis Damage", image: IMG.laptop_hinge, order: 3, deduction: 0,
+        key: "body_damage",
+        label: "Body / Chassis Damage",
+        image: IMG.laptop_hinge,
+        order: 3,
+        deduction: 0,
         children: [
-          { key: "hinge_broken",  label: "Hinge damaged or broken",      image: IMG.laptop_hinge,        deduction: 28 },
-          { key: "body_cracks",   label: "Cracks on chassis or lid",     image: IMG.laptop_body_cracks,  deduction: 18 },
-          { key: "body_dents",    label: "Dents on body",                image: IMG.laptop_body_dents,   deduction: 8  },
-          { key: "port_damage",   label: "USB / HDMI ports damaged",     image: IMG.laptop_port_damage,  deduction: 12 },
+          {
+            key: "hinge_broken",
+            label: "Hinge damaged or broken",
+            image: IMG.laptop_hinge,
+            deduction: 28,
+          },
+          {
+            key: "body_cracks",
+            label: "Cracks on chassis or lid",
+            image: IMG.laptop_body_cracks,
+            deduction: 18,
+          },
+          {
+            key: "body_dents",
+            label: "Dents on body",
+            image: IMG.laptop_body_dents,
+            deduction: 8,
+          },
+          {
+            key: "port_damage",
+            label: "USB / HDMI ports damaged",
+            image: IMG.laptop_port_damage,
+            deduction: 12,
+          },
         ],
       },
       {
-        key: "hardware_issues", label: "Hardware / Component Issues", image: IMG.laptop_battery, order: 4, deduction: 0,
+        key: "hardware_issues",
+        label: "Hardware / Component Issues",
+        image: IMG.laptop_battery,
+        order: 4,
+        deduction: 0,
         children: [
-          { key: "battery_issue",     label: "Battery not charging or dead",      image: IMG.laptop_battery,  deduction: 35 },
-          { key: "fan_not_working",   label: "Fan not working or excessive noise", image: IMG.laptop_fan,     deduction: 18 },
-          { key: "liquid_damage",     label: "Liquid damage inside",              image: IMG.laptop_liquid,   deduction: 65 },
-          { key: "ram_issue",         label: "RAM failure or memory errors",      image: IMG.laptop_ram,      deduction: 28 },
-          { key: "storage_issue",     label: "Storage / SSD not detected",        image: IMG.laptop_storage,  deduction: 35 },
+          {
+            key: "battery_issue",
+            label: "Battery not charging or dead",
+            image: IMG.laptop_battery,
+            deduction: 35,
+          },
+          {
+            key: "fan_not_working",
+            label: "Fan not working or excessive noise",
+            image: IMG.laptop_fan,
+            deduction: 18,
+          },
+          {
+            key: "liquid_damage",
+            label: "Liquid damage inside",
+            image: IMG.laptop_liquid,
+            deduction: 65,
+          },
+          {
+            key: "ram_issue",
+            label: "RAM failure or memory errors",
+            image: IMG.laptop_ram,
+            deduction: 28,
+          },
+          {
+            key: "storage_issue",
+            label: "Storage / SSD not detected",
+            image: IMG.laptop_storage,
+            deduction: 35,
+          },
         ],
       },
     ],
     accessories: [
-      { key: "original_charger",  label: "Original charger/adapter",          image: IMG.acc_charger,   order: 1, addition: 5 },
-      { key: "original_box",      label: "Original box included",             image: IMG.acc_box,       order: 2, addition: 2 },
-      { key: "bill_invoice",      label: "Original purchase bill/invoice",    image: IMG.acc_invoice,   order: 3, addition: 3 },
-      { key: "mouse",             label: "Mouse included",                    image: IMG.acc_mouse,     order: 4, addition: 2 },
-      { key: "keyboard_acc",      label: "External keyboard included",        image: IMG.acc_keyboard,  order: 5, addition: 2 },
+      {
+        key: "original_charger",
+        label: "Original charger/adapter",
+        image: IMG.acc_charger,
+        order: 1,
+        addition: 5,
+      },
+      {
+        key: "original_box",
+        label: "Original box included",
+        image: IMG.acc_box,
+        order: 2,
+        addition: 2,
+      },
+      {
+        key: "bill_invoice",
+        label: "Original purchase bill/invoice",
+        image: IMG.acc_invoice,
+        order: 3,
+        addition: 3,
+      },
+      {
+        key: "mouse",
+        label: "Mouse included",
+        image: IMG.acc_mouse,
+        order: 4,
+        addition: 2,
+      },
+      {
+        key: "keyboard_acc",
+        label: "External keyboard included",
+        image: IMG.acc_keyboard,
+        order: 5,
+        addition: 2,
+      },
     ],
   },
 
@@ -1110,53 +1535,189 @@ const evaluationConfigSeed = [
     category: "tablet",
     processingFee: 349,
     questions: [
-      { key: "device_turns_on",  label: "Does the tablet turn on normally?",           order: 1, deductionOnNo: 55 },
-      { key: "touch_working",    label: "Is the touchscreen working perfectly?",        order: 2, deductionOnNo: 30 },
-      { key: "wifi_working",     label: "Is Wi-Fi working properly?",                  order: 3, deductionOnNo: 15 },
-      { key: "camera_working",   label: "Is the camera working correctly?",            order: 4, deductionOnNo: 12 },
-      { key: "battery_charges",  label: "Does the battery charge normally?",           order: 5, deductionOnNo: 22 },
+      {
+        key: "device_turns_on",
+        label: "Does the tablet turn on normally?",
+        order: 1,
+        deductionOnNo: 55,
+      },
+      {
+        key: "touch_working",
+        label: "Is the touchscreen working perfectly?",
+        order: 2,
+        deductionOnNo: 30,
+      },
+      {
+        key: "wifi_working",
+        label: "Is Wi-Fi working properly?",
+        order: 3,
+        deductionOnNo: 15,
+      },
+      {
+        key: "camera_working",
+        label: "Is the camera working correctly?",
+        order: 4,
+        deductionOnNo: 12,
+      },
+      {
+        key: "battery_charges",
+        label: "Does the battery charge normally?",
+        order: 5,
+        deductionOnNo: 22,
+      },
     ],
     defects: [
       {
-        key: "screen_damage", label: "Screen / Display Damage", image: IMG.tablet_screen_cracked, order: 1, deduction: 0,
+        key: "screen_damage",
+        label: "Screen / Display Damage",
+        image: IMG.tablet_screen_cracked,
+        order: 1,
+        deduction: 0,
         children: [
-          { key: "screen_cracked",      label: "Screen cracked or shattered",       image: IMG.tablet_screen_cracked,  deduction: 48 },
-          { key: "touch_unresponsive",  label: "Touchscreen unresponsive",          image: IMG.tablet_touch,           deduction: 32 },
-          { key: "dead_pixels",         label: "Dead pixels on display",            image: IMG.tablet_dead_pixels,     deduction: 22 },
-          { key: "display_lines",       label: "Lines or patches on screen",        image: IMG.tablet_display_lines,   deduction: 22 },
+          {
+            key: "screen_cracked",
+            label: "Screen cracked or shattered",
+            image: IMG.tablet_screen_cracked,
+            deduction: 48,
+          },
+          {
+            key: "touch_unresponsive",
+            label: "Touchscreen unresponsive",
+            image: IMG.tablet_touch,
+            deduction: 32,
+          },
+          {
+            key: "dead_pixels",
+            label: "Dead pixels on display",
+            image: IMG.tablet_dead_pixels,
+            deduction: 22,
+          },
+          {
+            key: "display_lines",
+            label: "Lines or patches on screen",
+            image: IMG.tablet_display_lines,
+            deduction: 22,
+          },
         ],
       },
       {
-        key: "body_damage", label: "Body / Frame Damage", image: IMG.tablet_back_cracked, order: 2, deduction: 0,
+        key: "body_damage",
+        label: "Body / Frame Damage",
+        image: IMG.tablet_back_cracked,
+        order: 2,
+        deduction: 0,
         children: [
-          { key: "back_cracked",    label: "Back panel cracked",          image: IMG.tablet_back_cracked,    deduction: 18 },
-          { key: "body_dents",      label: "Dents on frame",              image: IMG.tablet_body_dents,      deduction: 10 },
-          { key: "body_scratches",  label: "Deep scratches on body",      image: IMG.tablet_body_scratches,  deduction: 5  },
+          {
+            key: "back_cracked",
+            label: "Back panel cracked",
+            image: IMG.tablet_back_cracked,
+            deduction: 18,
+          },
+          {
+            key: "body_dents",
+            label: "Dents on frame",
+            image: IMG.tablet_body_dents,
+            deduction: 10,
+          },
+          {
+            key: "body_scratches",
+            label: "Deep scratches on body",
+            image: IMG.tablet_body_scratches,
+            deduction: 5,
+          },
         ],
       },
       {
-        key: "camera_damage", label: "Camera Issues", image: IMG.tablet_camera, order: 3, deduction: 0,
+        key: "camera_damage",
+        label: "Camera Issues",
+        image: IMG.tablet_camera,
+        order: 3,
+        deduction: 0,
         children: [
-          { key: "camera_not_working",   label: "Camera not working",         image: IMG.tablet_camera, deduction: 22 },
-          { key: "camera_lens_broken",   label: "Camera lens cracked/broken", image: IMG.tablet_camera, deduction: 18 },
+          {
+            key: "camera_not_working",
+            label: "Camera not working",
+            image: IMG.tablet_camera,
+            deduction: 22,
+          },
+          {
+            key: "camera_lens_broken",
+            label: "Camera lens cracked/broken",
+            image: IMG.tablet_camera,
+            deduction: 18,
+          },
         ],
       },
       {
-        key: "hardware_issues", label: "Hardware / Functional Issues", image: IMG.tablet_battery, order: 4, deduction: 0,
+        key: "hardware_issues",
+        label: "Hardware / Functional Issues",
+        image: IMG.tablet_battery,
+        order: 4,
+        deduction: 0,
         children: [
-          { key: "charging_port_issue",  label: "Charging port damaged",          image: IMG.tablet_charging_port,  deduction: 18 },
-          { key: "battery_issue",        label: "Battery not holding charge",     image: IMG.tablet_battery,        deduction: 25 },
-          { key: "speaker_issue",        label: "Speaker not working",            image: IMG.tablet_speaker,        deduction: 12 },
-          { key: "water_damage",         label: "Water or liquid damage",         image: IMG.tablet_water,          deduction: 45 },
+          {
+            key: "charging_port_issue",
+            label: "Charging port damaged",
+            image: IMG.tablet_charging_port,
+            deduction: 18,
+          },
+          {
+            key: "battery_issue",
+            label: "Battery not holding charge",
+            image: IMG.tablet_battery,
+            deduction: 25,
+          },
+          {
+            key: "speaker_issue",
+            label: "Speaker not working",
+            image: IMG.tablet_speaker,
+            deduction: 12,
+          },
+          {
+            key: "water_damage",
+            label: "Water or liquid damage",
+            image: IMG.tablet_water,
+            deduction: 45,
+          },
         ],
       },
     ],
     accessories: [
-      { key: "original_box",      label: "Original box included",             image: IMG.acc_box,       order: 1, addition: 2 },
-      { key: "original_charger",  label: "Original charger/cable",            image: IMG.acc_charger,   order: 2, addition: 3 },
-      { key: "bill_invoice",      label: "Original purchase bill/invoice",    image: IMG.acc_invoice,   order: 3, addition: 3 },
-      { key: "stylus",            label: "Stylus / Apple Pencil included",    image: IMG.acc_stylus,    order: 4, addition: 6 },
-      { key: "keyboard_acc",      label: "Keyboard cover included",           image: IMG.acc_keyboard,  order: 5, addition: 4 },
+      {
+        key: "original_box",
+        label: "Original box included",
+        image: IMG.acc_box,
+        order: 1,
+        addition: 2,
+      },
+      {
+        key: "original_charger",
+        label: "Original charger/cable",
+        image: IMG.acc_charger,
+        order: 2,
+        addition: 3,
+      },
+      {
+        key: "bill_invoice",
+        label: "Original purchase bill/invoice",
+        image: IMG.acc_invoice,
+        order: 3,
+        addition: 3,
+      },
+      {
+        key: "stylus",
+        label: "Stylus / Apple Pencil included",
+        image: IMG.acc_stylus,
+        order: 4,
+        addition: 6,
+      },
+      {
+        key: "keyboard_acc",
+        label: "Keyboard cover included",
+        image: IMG.acc_keyboard,
+        order: 5,
+        addition: 4,
+      },
     ],
   },
 
@@ -1164,43 +1725,148 @@ const evaluationConfigSeed = [
     category: "smartwatch",
     processingFee: 199,
     questions: [
-      { key: "device_turns_on",  label: "Does the watch turn on normally?",                  order: 1, deductionOnNo: 65 },
-      { key: "touch_working",    label: "Is the touchscreen responding correctly?",           order: 2, deductionOnNo: 28 },
-      { key: "battery_good",     label: "Does battery last a full day?",                     order: 3, deductionOnNo: 25 },
-      { key: "sensors_working",  label: "Are health sensors (heart rate etc.) working?",     order: 4, deductionOnNo: 18 },
+      {
+        key: "device_turns_on",
+        label: "Does the watch turn on normally?",
+        order: 1,
+        deductionOnNo: 65,
+      },
+      {
+        key: "touch_working",
+        label: "Is the touchscreen responding correctly?",
+        order: 2,
+        deductionOnNo: 28,
+      },
+      {
+        key: "battery_good",
+        label: "Does battery last a full day?",
+        order: 3,
+        deductionOnNo: 25,
+      },
+      {
+        key: "sensors_working",
+        label: "Are health sensors (heart rate etc.) working?",
+        order: 4,
+        deductionOnNo: 18,
+      },
     ],
     defects: [
       {
-        key: "screen_damage", label: "Screen / Display Damage", image: IMG.watch_screen_cracked, order: 1, deduction: 0,
+        key: "screen_damage",
+        label: "Screen / Display Damage",
+        image: IMG.watch_screen_cracked,
+        order: 1,
+        deduction: 0,
         children: [
-          { key: "screen_cracked",      label: "Screen cracked or shattered",  image: IMG.watch_screen_cracked,  deduction: 55 },
-          { key: "dead_pixels",         label: "Dead pixels on display",       image: IMG.watch_dead_pixels,     deduction: 28 },
-          { key: "touch_unresponsive",  label: "Touch unresponsive",           image: IMG.watch_touch_issue,     deduction: 25 },
+          {
+            key: "screen_cracked",
+            label: "Screen cracked or shattered",
+            image: IMG.watch_screen_cracked,
+            deduction: 55,
+          },
+          {
+            key: "dead_pixels",
+            label: "Dead pixels on display",
+            image: IMG.watch_dead_pixels,
+            deduction: 28,
+          },
+          {
+            key: "touch_unresponsive",
+            label: "Touch unresponsive",
+            image: IMG.watch_touch_issue,
+            deduction: 25,
+          },
         ],
       },
       {
-        key: "body_damage", label: "Body / Casing Damage", image: IMG.watch_body_scratches, order: 2, deduction: 0,
+        key: "body_damage",
+        label: "Body / Casing Damage",
+        image: IMG.watch_body_scratches,
+        order: 2,
+        deduction: 0,
         children: [
-          { key: "body_scratches",  label: "Deep scratches on case",          image: IMG.watch_body_scratches,  deduction: 10 },
-          { key: "body_dents",      label: "Dents on case",                   image: IMG.watch_body_dents,      deduction: 12 },
-          { key: "crown_damaged",   label: "Digital crown/buttons damaged",   image: IMG.watch_crown,           deduction: 18 },
-          { key: "strap_damaged",   label: "Strap broken or damaged",         image: IMG.watch_strap_damaged,   deduction: 5  },
+          {
+            key: "body_scratches",
+            label: "Deep scratches on case",
+            image: IMG.watch_body_scratches,
+            deduction: 10,
+          },
+          {
+            key: "body_dents",
+            label: "Dents on case",
+            image: IMG.watch_body_dents,
+            deduction: 12,
+          },
+          {
+            key: "crown_damaged",
+            label: "Digital crown/buttons damaged",
+            image: IMG.watch_crown,
+            deduction: 18,
+          },
+          {
+            key: "strap_damaged",
+            label: "Strap broken or damaged",
+            image: IMG.watch_strap_damaged,
+            deduction: 5,
+          },
         ],
       },
       {
-        key: "hardware_issues", label: "Hardware / Functional Issues", image: IMG.watch_battery, order: 3, deduction: 0,
+        key: "hardware_issues",
+        label: "Hardware / Functional Issues",
+        image: IMG.watch_battery,
+        order: 3,
+        deduction: 0,
         children: [
-          { key: "battery_issue",   label: "Battery not holding charge",    image: IMG.watch_battery,   deduction: 30 },
-          { key: "charging_issue",  label: "Charging not working",          image: IMG.watch_charging,  deduction: 25 },
-          { key: "sensor_issue",    label: "Health sensors not working",    image: IMG.watch_sensor,    deduction: 22 },
-          { key: "water_damage",    label: "Water damage",                  image: IMG.watch_water,     deduction: 45 },
+          {
+            key: "battery_issue",
+            label: "Battery not holding charge",
+            image: IMG.watch_battery,
+            deduction: 30,
+          },
+          {
+            key: "charging_issue",
+            label: "Charging not working",
+            image: IMG.watch_charging,
+            deduction: 25,
+          },
+          {
+            key: "sensor_issue",
+            label: "Health sensors not working",
+            image: IMG.watch_sensor,
+            deduction: 22,
+          },
+          {
+            key: "water_damage",
+            label: "Water damage",
+            image: IMG.watch_water,
+            deduction: 45,
+          },
         ],
       },
     ],
     accessories: [
-      { key: "original_box",      label: "Original box included",          image: IMG.acc_box,      order: 1, addition: 3 },
-      { key: "original_charger",  label: "Original charger",               image: IMG.acc_charger,  order: 2, addition: 5 },
-      { key: "extra_strap",       label: "Extra strap included",           image: IMG.acc_strap,    order: 3, addition: 3 },
+      {
+        key: "original_box",
+        label: "Original box included",
+        image: IMG.acc_box,
+        order: 1,
+        addition: 3,
+      },
+      {
+        key: "original_charger",
+        label: "Original charger",
+        image: IMG.acc_charger,
+        order: 2,
+        addition: 5,
+      },
+      {
+        key: "extra_strap",
+        label: "Extra strap included",
+        image: IMG.acc_strap,
+        order: 3,
+        addition: 3,
+      },
     ],
   },
 
@@ -1208,48 +1874,180 @@ const evaluationConfigSeed = [
     category: "television",
     processingFee: 999,
     questions: [
-      { key: "powers_on",         label: "Does the TV power on and off normally?",      order: 1, deductionOnNo: 75 },
-      { key: "display_uniform",   label: "Is the display uniform with no patches?",     order: 2, deductionOnNo: 45 },
-      { key: "remote_working",    label: "Is the original remote control working?",     order: 3, deductionOnNo: 10 },
-      { key: "hdmi_working",      label: "Are HDMI ports working properly?",            order: 4, deductionOnNo: 18 },
-      { key: "smart_tv_working",  label: "Is Smart TV / internet working?",             order: 5, deductionOnNo: 12 },
+      {
+        key: "powers_on",
+        label: "Does the TV power on and off normally?",
+        order: 1,
+        deductionOnNo: 75,
+      },
+      {
+        key: "display_uniform",
+        label: "Is the display uniform with no patches?",
+        order: 2,
+        deductionOnNo: 45,
+      },
+      {
+        key: "remote_working",
+        label: "Is the original remote control working?",
+        order: 3,
+        deductionOnNo: 10,
+      },
+      {
+        key: "hdmi_working",
+        label: "Are HDMI ports working properly?",
+        order: 4,
+        deductionOnNo: 18,
+      },
+      {
+        key: "smart_tv_working",
+        label: "Is Smart TV / internet working?",
+        order: 5,
+        deductionOnNo: 12,
+      },
     ],
     defects: [
       {
-        key: "panel_damage", label: "Panel / Screen Damage", image: IMG.tv_panel_cracked, order: 1, deduction: 0,
+        key: "panel_damage",
+        label: "Panel / Screen Damage",
+        image: IMG.tv_panel_cracked,
+        order: 1,
+        deduction: 0,
         children: [
-          { key: "panel_cracked",   label: "Panel cracked or physically broken",      image: IMG.tv_panel_cracked,    deduction: 85 },
-          { key: "panel_lines",     label: "Horizontal or vertical lines",            image: IMG.tv_panel_lines,      deduction: 38 },
-          { key: "dead_pixels",     label: "Dead pixels or dark patches",             image: IMG.tv_dead_pixels,      deduction: 28 },
-          { key: "burn_in",         label: "Screen burn-in or ghost image",           image: IMG.tv_burn_in,          deduction: 42 },
-          { key: "discoloration",   label: "Screen discoloration or colour shift",    image: IMG.tv_discoloration,    deduction: 22 },
+          {
+            key: "panel_cracked",
+            label: "Panel cracked or physically broken",
+            image: IMG.tv_panel_cracked,
+            deduction: 85,
+          },
+          {
+            key: "panel_lines",
+            label: "Horizontal or vertical lines",
+            image: IMG.tv_panel_lines,
+            deduction: 38,
+          },
+          {
+            key: "dead_pixels",
+            label: "Dead pixels or dark patches",
+            image: IMG.tv_dead_pixels,
+            deduction: 28,
+          },
+          {
+            key: "burn_in",
+            label: "Screen burn-in or ghost image",
+            image: IMG.tv_burn_in,
+            deduction: 42,
+          },
+          {
+            key: "discoloration",
+            label: "Screen discoloration or colour shift",
+            image: IMG.tv_discoloration,
+            deduction: 22,
+          },
         ],
       },
       {
-        key: "body_damage", label: "Body / Casing Damage", image: IMG.tv_bezel_cracked, order: 2, deduction: 0,
+        key: "body_damage",
+        label: "Body / Casing Damage",
+        image: IMG.tv_bezel_cracked,
+        order: 2,
+        deduction: 0,
         children: [
-          { key: "bezel_cracked",  label: "Bezel/frame cracked",          image: IMG.tv_bezel_cracked,  deduction: 15 },
-          { key: "stand_broken",   label: "Stand/legs broken or missing", image: IMG.tv_stand_broken,   deduction: 18 },
+          {
+            key: "bezel_cracked",
+            label: "Bezel/frame cracked",
+            image: IMG.tv_bezel_cracked,
+            deduction: 15,
+          },
+          {
+            key: "stand_broken",
+            label: "Stand/legs broken or missing",
+            image: IMG.tv_stand_broken,
+            deduction: 18,
+          },
         ],
       },
       {
-        key: "hardware_issues", label: "Hardware / Functional Issues", image: IMG.tv_power, order: 3, deduction: 0,
+        key: "hardware_issues",
+        label: "Hardware / Functional Issues",
+        image: IMG.tv_power,
+        order: 3,
+        deduction: 0,
         children: [
-          { key: "speaker_issue",   label: "Speaker not working or distorted",    image: IMG.tv_speaker,      deduction: 18 },
-          { key: "hdmi_port_issue", label: "HDMI ports not working",              image: IMG.tv_hdmi,         deduction: 18 },
-          { key: "usb_port_issue",  label: "USB ports not working",               image: IMG.tv_usb_port,     deduction: 10 },
-          { key: "power_issue",     label: "Takes long to power on/restarts",     image: IMG.tv_power,        deduction: 22 },
-          { key: "remote_issue",    label: "Remote control not working",          image: IMG.tv_remote_issue, deduction: 8  },
-          { key: "no_signal",       label: "No signal / input detection issues",  image: IMG.tv_no_signal,    deduction: 15 },
+          {
+            key: "speaker_issue",
+            label: "Speaker not working or distorted",
+            image: IMG.tv_speaker,
+            deduction: 18,
+          },
+          {
+            key: "hdmi_port_issue",
+            label: "HDMI ports not working",
+            image: IMG.tv_hdmi,
+            deduction: 18,
+          },
+          {
+            key: "usb_port_issue",
+            label: "USB ports not working",
+            image: IMG.tv_usb_port,
+            deduction: 10,
+          },
+          {
+            key: "power_issue",
+            label: "Takes long to power on/restarts",
+            image: IMG.tv_power,
+            deduction: 22,
+          },
+          {
+            key: "remote_issue",
+            label: "Remote control not working",
+            image: IMG.tv_remote_issue,
+            deduction: 8,
+          },
+          {
+            key: "no_signal",
+            label: "No signal / input detection issues",
+            image: IMG.tv_no_signal,
+            deduction: 15,
+          },
         ],
       },
     ],
     accessories: [
-      { key: "remote",          label: "Original remote control",       image: IMG.acc_remote,   order: 1, addition: 3 },
-      { key: "original_stand",  label: "Original stand/legs",           image: IMG.acc_stand,    order: 2, addition: 4 },
-      { key: "original_box",    label: "Original packaging box",        image: IMG.acc_box,      order: 3, addition: 2 },
-      { key: "bill_invoice",    label: "Original purchase bill/invoice", image: IMG.acc_invoice, order: 4, addition: 3 },
-      { key: "hdmi_cable",      label: "HDMI cable included",           image: IMG.acc_cable,    order: 5, addition: 2 },
+      {
+        key: "remote",
+        label: "Original remote control",
+        image: IMG.acc_remote,
+        order: 1,
+        addition: 3,
+      },
+      {
+        key: "original_stand",
+        label: "Original stand/legs",
+        image: IMG.acc_stand,
+        order: 2,
+        addition: 4,
+      },
+      {
+        key: "original_box",
+        label: "Original packaging box",
+        image: IMG.acc_box,
+        order: 3,
+        addition: 2,
+      },
+      {
+        key: "bill_invoice",
+        label: "Original purchase bill/invoice",
+        image: IMG.acc_invoice,
+        order: 4,
+        addition: 3,
+      },
+      {
+        key: "hdmi_cable",
+        label: "HDMI cable included",
+        image: IMG.acc_cable,
+        order: 5,
+        addition: 2,
+      },
     ],
   },
 ];
@@ -1279,7 +2077,7 @@ async function seed() {
       await EvaluationConfig.findOneAndUpdate(
         query,
         { $set: config },
-        { upsert: true, new: true }
+        { upsert: true, new: true },
       );
     }
 
@@ -1301,7 +2099,7 @@ async function seed() {
 
         for (const newModel of catalog.models) {
           const existingModel = existing.models.find(
-            (m) => m.name === newModel.name
+            (m) => m.name === newModel.name,
           );
 
           if (!existingModel) {
@@ -1316,15 +2114,12 @@ async function seed() {
 
         await existing.save();
 
-        console.log(
-          `🔄 ${catalog.brand}: +${added} added, ${updated} updated`
-        );
+        console.log(`🔄 ${catalog.brand}: +${added} added, ${updated} updated`);
       }
     }
 
     console.log("🎉 SEED COMPLETED (SAFE MODE)");
     process.exit(0);
-
   } catch (error) {
     console.error("❌ Seed failed:", error);
     process.exit(1);
@@ -1332,4 +2127,3 @@ async function seed() {
 }
 
 seed();
-

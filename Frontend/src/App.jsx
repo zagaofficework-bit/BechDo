@@ -34,6 +34,7 @@ import { Toaster } from "react-hot-toast";
 import AboutPage from "./features/common/About";
 import Blog from "./features/common/Blog";
 import Support from "./features/common/Support";
+import NearbyDevicesPage from "./features/Auth/pages/NearbyDevicesPage";
 import { RouteErrorBoundary } from "./features/common/ErrorBoundary";
 
 // ─── Lazy-loaded pages ─────────────────────────────────────────────────────────
@@ -312,6 +313,14 @@ export default function App() {
                         <MainLayout>
                           <TVPage />
                         </MainLayout>
+                      }
+                    />
+                    <Route
+                      path="/nearby-devices"
+                      element={
+                        <BareLayout>
+                          <NearbyDevicesPage />
+                        </BareLayout>
                       }
                     />
 

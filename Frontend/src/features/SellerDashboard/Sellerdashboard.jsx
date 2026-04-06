@@ -1661,6 +1661,8 @@ const DeviceListingCard = memo(
               <p className="text-xs font-bold text-slate-400 tracking-widest uppercase mb-3">
                 User Details
               </p>
+
+              {/* ── Contact / address rows ── */}
               {[
                 { icon: "👤", label: "Name", value: userName },
                 { icon: "📞", label: "Mobile", value: userPhone },
@@ -1680,7 +1682,7 @@ const DeviceListingCard = memo(
                 </div>
               ))}
 
-              {/* Confirmed pickup info */}
+              {/* ── Confirmed pickup info ── */}
               {isScheduled && (
                 <div className="bg-emerald-50 rounded-xl border border-emerald-100 px-3 py-2.5 space-y-1">
                   <p className="text-xs text-emerald-700 font-bold uppercase tracking-wider">
@@ -1701,59 +1703,203 @@ const DeviceListingCard = memo(
                 </div>
               )}
 
+              {/* ── Condition answers (dynamic — all stored answers) ── */}
+              {listing.evaluation?.answers &&
+                Object.keys(listing.evaluation.answers).length > 0 &&
+                (() => {
+                  // answers is a Map from Mongoose — may come as plain object or Map-like
+                  const answersObj =
+                    listing.evaluation.answers instanceof Map
+                      ? Object.fromEntries(listing.evaluation.answers)
+                      : listing.evaluation.answers;
+
+                  const ANSWER_LABELS = {
+                    can_make_calls: "Can Make Calls",
+                    touch_working: "Touch Working",
+                    original_screen: "Original Screen",
+                    powers_on: "Powers On",
+                    battery_health: "Battery Health Good",
+                    no_water_damage: "No Water Damage",
+                    wifi_working: "Wi-Fi Working",
+                    camera_working: "Camera Working",
+                    charging_working: "Charging Working",
+                  };
+
+                  const entries = Object.entries(answersObj).filter(
+                    ([, v]) => v !== undefined && v !== null,
+                  );
+                  if (entries.length === 0) return null;
+
+                  return (
+                    <div className="bg-white rounded-xl border border-slate-100 px-3 py-2.5">
+                      <p className="text-xs text-slate-400 font-bold tracking-widest uppercase mb-2">
+                        Device Condition
+                      </p>
+                      {entries.map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="flex justify-between items-center text-xs py-1.5 border-b border-slate-50 last:border-0"
+                        >
+                          <span className="text-slate-500 capitalize">
+                            {ANSWER_LABELS[key] ?? key.replace(/_/g, " ")}
+                          </span>
+                          <span
+                            className={`font-bold px-2 py-0.5 rounded-full text-[11px] ${
+                              value
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : "bg-red-50 text-red-600 border border-red-200"
+                            }`}
+                          >
+                            {value ? "✓ Yes" : "✗ No"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+
+              {/* ── Defects with deduction % ── */}
               {hasDefects && (
                 <div className="bg-white rounded-xl border border-red-100 px-3 py-2.5">
-                  <p className="text-xs text-red-500 font-bold mb-2 uppercase tracking-wider">
-                    Reported Defects
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-red-500 font-bold uppercase tracking-wider">
+                      Reported Defects
+                    </p>
+                    <span className="text-xs font-bold text-red-500 bg-red-50 border border-red-100 px-2 py-0.5 rounded-full">
+                      −
+                      {listing.evaluation.defects.reduce(
+                        (sum, d) => sum + (d.deduction ?? 0),
+                        0,
+                      )}
+                      % total
+                    </span>
+                  </div>
                   {listing.evaluation.defects.map((d, i) => (
                     <div
                       key={i}
-                      className="flex justify-between text-xs py-1 border-b border-slate-50 last:border-0"
+                      className="flex justify-between items-center text-xs py-1.5 border-b border-slate-50 last:border-0"
                     >
-                      <span className="text-slate-600">{d.label}</span>
-                      <span className="text-red-500 font-semibold">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-red-400 flex-shrink-0" />
+                        <span className="text-slate-600">
+                          {d.label || d.key}
+                        </span>
+                      </div>
+                      <span className="font-bold text-red-500 bg-red-50 border border-red-100 px-2 py-0.5 rounded-full text-[11px]">
                         −{d.deduction}%
                       </span>
                     </div>
                   ))}
+                  {/* Monetary impact */}
+                  <div className="mt-2 pt-2 border-t border-red-50 flex justify-between text-xs">
+                    <span className="text-slate-400">Deduction amount</span>
+                    <span className="font-bold text-red-500">
+                      −₹
+                      {Number(listing.deductionAmount || 0).toLocaleString(
+                        "en-IN",
+                      )}
+                    </span>
+                  </div>
                 </div>
               )}
-              {listing.evaluation && (
-                <div className="bg-white rounded-xl border border-slate-100 px-3 py-2.5">
-                  <p className="text-xs text-slate-400 font-bold tracking-widest uppercase mb-2">
-                    Condition
-                  </p>
-                  {[
-                    {
-                      label: "Can Make Calls",
-                      value: listing.evaluation.canMakeCalls,
-                    },
-                    {
-                      label: "Touch Working",
-                      value: listing.evaluation.touchWorking,
-                    },
-                    {
-                      label: "Original Screen",
-                      value: listing.evaluation.originalScreen,
-                    },
-                  ]
-                    .filter((r) => r.value !== undefined)
-                    .map((r) => (
-                      <div
-                        key={r.label}
-                        className="flex justify-between text-xs py-1 border-b border-slate-50 last:border-0"
-                      >
-                        <span className="text-slate-500">{r.label}</span>
+
+              {/* ── Accessories (keys only stored — show as tags with + indicator) ── */}
+              {listing.evaluation?.accessoryKeys?.length > 0 && (
+                <div className="bg-white rounded-xl border border-emerald-100 px-3 py-2.5">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-emerald-600 font-bold uppercase tracking-wider">
+                      Accessories Included
+                    </p>
+                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                      +
+                      {listing.additionAmount > 0
+                        ? `₹${Number(listing.additionAmount).toLocaleString("en-IN")}`
+                        : "bonus value"}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {listing.evaluation.accessoryKeys.map((key, i) => {
+                      const ACCESSORY_LABELS = {
+                        original_charger: "Original Charger",
+                        original_box: "Original Box",
+                        earphones: "Earphones",
+                        back_cover: "Back Cover",
+                        screen_guard: "Screen Guard",
+                        bill: "Bill / Invoice",
+                        warranty_card: "Warranty Card",
+                        data_cable: "Data Cable",
+                        adapter: "Adapter",
+                        sim_ejector: "SIM Ejector",
+                      };
+                      const label =
+                        ACCESSORY_LABELS[key] ?? key.replace(/_/g, " ");
+                      return (
                         <span
-                          className={`font-bold ${r.value ? "text-emerald-600" : "text-red-500"}`}
+                          key={i}
+                          className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full capitalize"
                         >
-                          {r.value ? "✓ Yes" : "✗ No"}
+                          <span className="text-emerald-500 text-[10px] font-bold">
+                            ✓
+                          </span>
+                          {label}
                         </span>
-                      </div>
-                    ))}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
+
+              {/* ── Pricing breakdown summary ── */}
+              <div className="bg-slate-50 rounded-xl border border-slate-100 px-3 py-2.5">
+                <p className="text-xs text-slate-400 font-bold tracking-widest uppercase mb-2">
+                  Price Breakdown
+                </p>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Base price</span>
+                    <span className="font-semibold text-slate-700">
+                      ₹{Number(listing.basePrice || 0).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  {listing.deductionAmount > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Defect deductions</span>
+                      <span className="font-semibold text-red-500">
+                        −₹
+                        {Number(listing.deductionAmount).toLocaleString(
+                          "en-IN",
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {listing.additionAmount > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Accessory bonus</span>
+                      <span className="font-semibold text-emerald-600">
+                        +₹
+                        {Number(listing.additionAmount).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  )}
+                  {listing.processingFee > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-500">Processing fee</span>
+                      <span className="font-semibold text-slate-500">
+                        −₹
+                        {Number(listing.processingFee).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xs pt-1.5 border-t border-slate-200 mt-1">
+                    <span className="font-bold text-slate-700">
+                      Final offer
+                    </span>
+                    <span className="font-extrabold text-[#1132d4]">
+                      ₹{Number(listing.finalPrice || 0).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -2418,17 +2564,16 @@ export default function SellerDashboard() {
           <BackButton />
           <div className="flex items-center gap-3 flex-1">
             <div className="w-8 h-8 rounded-lg bg-[#1132d4] flex items-center justify-center shadow-[0_2px_8px_rgba(17,50,212,0.4)]">
-              
               <span className="text-white text-sm font-black">S</span>
             </div>
-            
+
             <div>
               <p className="text-sm font-bold text-slate-800">Seller Portal</p>
               <div className="flex items-center gap-1.5">
                 <p className="text-xs text-slate-400">Dashboard</p>
                 {isSuperSeller && (
                   <span className="text-xs bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">
-                    ⭐ Super Seller
+                    ⭐ Seller
                   </span>
                 )}
               </div>
@@ -2441,7 +2586,6 @@ export default function SellerDashboard() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 fade-up">
           <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-[0_2px_16px_rgba(17,50,212,0.05)] overflow-hidden">
             <div className="px-6 pt-6 pb-6">
@@ -2465,7 +2609,7 @@ export default function SellerDashboard() {
                       {firstName} {lastName}
                     </h2>
                     <p className="text-xs text-[#1132d4] font-semibold">
-                      {isSuperSeller ? "⭐ Super Seller" : "Verified Seller"}
+                      {isSuperSeller ? "⭐ Seller" : "Verified Seller"}
                     </p>
                   </div>
                 </div>

@@ -117,7 +117,7 @@ function LocationButton() {
     return (
       <>
         <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={handleCancel} />
-        <div className="fixed top-16 right-4 z-50 bg-white rounded-2xl shadow-2xl border border-slate-100 w-80 p-5"
+        <div className="fixed top-16 right-2 sm:right-4 z-50 bg-white rounded-2xl shadow-2xl border border-slate-100 w-[calc(100vw-16px)] sm:w-80 p-5"
           style={{ animation: "fadeDown 0.2s ease" }}>
           <style>{`@keyframes fadeDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
           <div className="flex items-start gap-3 mb-4">
@@ -189,6 +189,19 @@ function LocationButton() {
   );
 }
 
+// ─── Icon button reusable ─────────────────────────────────────────────────────
+function IconBtn({ onClick, active, activeClass, inactiveClass, children, title }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`relative p-2 rounded-xl border transition-all duration-150 ${active ? activeClass : inactiveClass}`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function NavBar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -197,18 +210,17 @@ export default function NavBar() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-const onLogout = async () => {
-  try {
-    setLoggingOut(true);
-    await handleLogout();
-    navigate("/");
-  } catch (err) {
-    toast.error("Logout failed");
-  } finally {
-    setLoggingOut(false);
-  }
-};
-
+  const onLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await handleLogout();
+      navigate("/");
+    } catch (err) {
+      toast.error("Logout failed");
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   const isAdmin = isAuthenticated && user?.role === "admin";
   const isSeller = isAuthenticated && user?.role === "seller";
@@ -217,124 +229,171 @@ const onLogout = async () => {
     subscription?.plan?.toLowerCase() === "premium" &&
     subscription?.status === "active" || (isSeller && user?.isSuperSeller === true);
   const hasDefaultAddress = !!user?.defaultAddress?.city;
+
+  // Show shop icons on these paths
+  const shopPaths = ["/wishlist", "/cart"];
+  const isOnProductPage = location.pathname.startsWith("/product/");
   const showShopIcons =
     isAuthenticated &&
     !isAdmin &&
-    (location.pathname.startsWith("/product/") ||
-      location.pathname === "/wishlist" ||
-      location.pathname === "/cart");
+    (isOnProductPage || shopPaths.includes(location.pathname));
+
+  const isWishlist = location.pathname === "/wishlist";
+  const isCart = location.pathname === "/cart";
 
   return (
     <div className="sticky top-0 z-50">
-      <nav className="w-full bg-white shadow-md px-4 md:px-8 py-3">
-        <div className="flex items-center justify-between gap-3">
+      <nav className="w-full bg-white shadow-md px-3 sm:px-4 md:px-8 py-2.5 sm:py-3">
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
 
           {/* Logo */}
           <div className="flex items-center space-x-2 flex-shrink-0">
             <img
               src="/nav-logo.png"
               alt="Phonify Logo"
-              className="h-10 w-auto cursor-pointer object-contain"
+              className="h-8 sm:h-10 w-auto cursor-pointer object-contain"
               onClick={() => navigate("/")}
             />
           </div>
 
-          {/* Search bar — hidden on mobile, hidden for admins */}
+          {/* Search bar — desktop only, hidden for admins */}
           {!isAdmin && (
-            <div className="hidden md:flex flex-1 mx-6 items-center border rounded-lg px-3 py-2 bg-gray-50">
+            <div className="hidden md:flex flex-1 mx-4 lg:mx-6 items-center border rounded-lg px-3 py-2 bg-gray-50">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0"
                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z" />
               </svg>
               <input type="text" placeholder="Search for mobiles, accessories & More"
-                className="w-full bg-transparent focus:outline-none text-gray-700" />
+                className="w-full bg-transparent focus:outline-none text-gray-700 text-sm" />
             </div>
           )}
 
-          {/* Right actions — desktop */}
-          {isAuthenticated ? (
-            <div className="hidden md:flex items-center space-x-3 ml-auto">
-              {!isAdmin && !isPremium && (
-                <div onClick={() => navigate("/subscribe")} className="cursor-pointer" title="Subscription plans">
-                  <PiCrown className="text-4xl text-[#0077b6]" />
-                </div>
-              )}
-              {!isAdmin && !hasDefaultAddress && <LocationButton />}
-              {showShopIcons && (
-                <>
-                  <button onClick={() => navigate("/wishlist")} title="Wishlist"
-                    className={`relative p-2 rounded-xl border transition-all duration-150 ${location.pathname === "/wishlist"
-                      ? "border-red-300 bg-red-50 text-red-500"
-                      : "border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-500 hover:bg-red-50"}`}>
-                    <svg className="w-5 h-5" fill={location.pathname === "/wishlist" ? "currentColor" : "none"}
-                      stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round"
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </button>
-                  <button onClick={() => navigate("/cart")} title="Cart"
-                    className={`relative p-2 rounded-xl border transition-all duration-150 ${location.pathname === "/cart"
-                      ? "border-[#0077b6] bg-[#caf0f8] text-[#0077b6]"
-                      : "border-slate-200 text-slate-500 hover:border-[#0077b6] hover:text-[#0077b6] hover:bg-[#caf0f8]"}`}>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round"
-                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                  </button>
-                </>
-              )}
-              <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-600 hidden md:block">
-                  Hi, {user?.firstname}
-                  {isAdmin && (
-                    <span className="ml-1 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
-                      Admin
-                    </span>
-                  )}
-                </span>
-                {isAdmin && (
-                  <button onClick={() => navigate("/admin-dashboard")}
-                    className="flex items-center gap-1.5 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium text-sm">
-                    <MdAdminPanelSettings className="text-lg" />
-                    Admin Panel
-                  </button>
-                )}
-                {!isAdmin && (
-                  <button onClick={() => navigate(isSeller ? "/seller-dashboard" : "/profile")}
-                    className="bg-[#0077b6] text-white px-4 py-2 rounded-lg hover:bg-[#03045e] transition">
-                    {isSeller ? "Dashboard" : "Profile"}
-                  </button>
-                )}
-                <button onClick={onLogout} disabled={loggingOut}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50">
-                  {loggingOut ? "..." : "Logout"}
-                </button>
+          {/* ── RIGHT SIDE ── */}
+          <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
+
+            {/* MOBILE: wishlist + cart icons (always visible when authenticated & not admin) */}
+            {isAuthenticated && !isAdmin && (
+              <div className="flex items-center gap-1 md:hidden">
+                <IconBtn
+                  onClick={() => navigate("/wishlist")}
+                  title="Wishlist"
+                  active={isWishlist}
+                  activeClass="border-red-300 bg-red-50 text-red-500"
+                  inactiveClass="border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-500 hover:bg-red-50"
+                >
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill={isWishlist ? "currentColor" : "none"}
+                    stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </IconBtn>
+                <IconBtn
+                  onClick={() => navigate("/cart")}
+                  title="Cart"
+                  active={isCart}
+                  activeClass="border-[#0077b6] bg-[#caf0f8] text-[#0077b6]"
+                  inactiveClass="border-slate-200 text-slate-500 hover:border-[#0077b6] hover:text-[#0077b6] hover:bg-[#caf0f8]"
+                >
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round"
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </IconBtn>
               </div>
-            </div>
-          ) : (
-            <button onClick={() => navigate("/login")}
-              className="hidden md:block bg-[#0077b6] text-white px-4 py-2 rounded-lg hover:bg-[#03045e] transition ml-auto">
-              Login
-            </button>
-          )}
+            )}
 
-          {/* Hamburger — mobile only */}
-          <button
-            className="md:hidden text-gray-700 p-1 flex-shrink-0 ml-auto"
-            onClick={() => setMobileMenuOpen(v => !v)}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {mobileMenuOpen
-                ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
-            </svg>
-          </button>
+            {/* DESKTOP right actions */}
+            {isAuthenticated ? (
+              <div className="hidden md:flex items-center space-x-2 lg:space-x-3">
+                {!isAdmin && !isPremium && (
+                  <div onClick={() => navigate("/subscribe")} className="cursor-pointer" title="Subscription plans">
+                    <PiCrown className="text-3xl lg:text-4xl text-[#0077b6]" />
+                  </div>
+                )}
+                {!isAdmin && !hasDefaultAddress && <LocationButton />}
+                {showShopIcons && (
+                  <>
+                    <IconBtn
+                      onClick={() => navigate("/wishlist")}
+                      title="Wishlist"
+                      active={isWishlist}
+                      activeClass="border-red-300 bg-red-50 text-red-500"
+                      inactiveClass="border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-500 hover:bg-red-50"
+                    >
+                      <svg className="w-5 h-5" fill={isWishlist ? "currentColor" : "none"}
+                        stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                    </IconBtn>
+                    <IconBtn
+                      onClick={() => navigate("/cart")}
+                      title="Cart"
+                      active={isCart}
+                      activeClass="border-[#0077b6] bg-[#caf0f8] text-[#0077b6]"
+                      inactiveClass="border-slate-200 text-slate-500 hover:border-[#0077b6] hover:text-[#0077b6] hover:bg-[#caf0f8]"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round"
+                          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </IconBtn>
+                  </>
+                )}
+                <div className="flex items-center space-x-2 lg:space-x-3">
+                  <span className="text-sm text-gray-600 hidden lg:block">
+                    Hi, {user?.firstname}
+                    {isAdmin && (
+                      <span className="ml-1 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                        Admin
+                      </span>
+                    )}
+                  </span>
+                  {isAdmin && (
+                    <button onClick={() => navigate("/admin-dashboard")}
+                      className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 lg:px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium text-sm">
+                      <MdAdminPanelSettings className="text-lg" />
+                      <span className="hidden lg:inline">Admin Panel</span>
+                    </button>
+                  )}
+                  {!isAdmin && (
+                    <button onClick={() => navigate(isSeller ? "/seller-dashboard" : "/profile")}
+                      className="bg-[#0077b6] text-white px-3 lg:px-4 py-2 rounded-lg hover:bg-[#03045e] transition text-sm">
+                      {isSeller ? "Dashboard" : "Profile"}
+                    </button>
+                  )}
+                  <button onClick={onLogout} disabled={loggingOut}
+                    className="bg-red-600 text-white px-3 lg:px-4 py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50 text-sm">
+                    {loggingOut ? "..." : "Logout"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => navigate("/login")}
+                className="hidden md:block bg-[#0077b6] text-white px-4 py-2 rounded-lg hover:bg-[#03045e] transition text-sm">
+                Login
+              </button>
+            )}
+
+            {/* Hamburger — mobile only */}
+            <button
+              className="md:hidden text-gray-700 p-1.5 flex-shrink-0 rounded-lg hover:bg-gray-100 transition-colors"
+              onClick={() => setMobileMenuOpen(v => !v)}
+              aria-label="Toggle menu"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {mobileMenuOpen
+                  ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Mobile search bar */}
         {!isAdmin && (
-          <div className="mt-3 md:hidden flex items-center border rounded-lg px-3 py-2 bg-gray-50">
+          <div className="mt-2.5 md:hidden flex items-center border rounded-lg px-3 py-2 bg-gray-50">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 mr-2 flex-shrink-0"
               fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -346,7 +405,6 @@ const onLogout = async () => {
         )}
       </nav>
 
-      {/* NavMenu — isPremium prop removed, NavMenu reads context directly */}
       <NavMenu
         mobileOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
@@ -356,6 +414,7 @@ const onLogout = async () => {
         isSeller={isSeller}
         onLogout={onLogout}
         loggingOut={loggingOut}
+        isPremium={isPremium}
       />
     </div>
   );
