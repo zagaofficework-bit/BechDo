@@ -8,3 +8,5 @@ coverage
 .idea
 .vscode
 *.suo 
+*.env
+.env.local

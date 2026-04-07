@@ -9,6 +9,24 @@ const {
   buildVariantLabel,
 } = require("../constants/deviceSell.constants");
 const { calculateFinalPrice } = require("../utils/priceCalculator");
+const { Readable } = require("stream");
+
+/** Upload a single buffer to Cloudinary and return the secure_url */
+const uploadBufferToCloudinary = (buffer, folder = "rejection_images") =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: "image",
+        transformation: [{ width: 1200, crop: "limit", quality: "auto:good" }],
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result.secure_url);
+      },
+    );
+    Readable.from(buffer).pipe(stream);
+  });
 
 function isValidObjectId(id) {
   return mongoose.Types.ObjectId.isValid(id);
@@ -833,7 +851,7 @@ exports.confirmPickup = async (req, res) => {
         })
         .catch((err) => console.error("sendPickupConfirmedEmail error:", err));
     }
-    
+
     res.status(200).json({
       success: true,
       message:
@@ -1001,31 +1019,54 @@ exports.rejectListing = async (req, res) => {
     const seller = req.user;
     const { reason } = req.body;
 
+    // ── 1. Validate ID ───────────────────────────────────────────────────────
     if (!isValidObjectId(listingId))
       return res.status(400).json({ message: "Invalid listing ID" });
 
+    // ── 2. Fetch listing (must belong to this seller and be accepted) ────────
     const listing = await DeviceListing.findOne({
       _id: listingId,
       acceptedBy: seller._id,
       status: "accepted",
     }).populate("listedBy", "firstname email");
+
     if (!listing)
       return res.status(404).json({
         message: "Listing not found or you are not the accepting seller",
       });
 
+    // ── 3. Upload rejection images (if provided) ─────────────────────────────
+    const rejectionImages = req.files?.images?.length
+      ? await Promise.all(
+          req.files.images.map((f) => uploadBufferToCloudinary(f.buffer)),
+        )
+      : [];
+
+    let cleanReason = null;
+
+    if (typeof reason === "string") {
+      cleanReason = reason.trim();
+    } else if (Array.isArray(reason)) {
+      cleanReason = reason[0]?.trim();
+    } else if (typeof reason === "object" && reason !== null) {
+      cleanReason = String(reason).trim();
+    }
+
+    // ── 4. Super-seller path ─────────────────────────────────────────────────
     if (seller.isSuperSeller) {
-      listing.status = "available";
-      listing.acceptedBy = null;
-      listing.acceptedAt = null;
-      listing.visibility = "all_sellers";
-      listing.superSellerRejected = true;
-      listing.superSellerRejectedBy = seller._id;
-      listing.superSellerRejectedAt = new Date();
-      listing.rejectionReason = reason?.trim() || null;
+      Object.assign(listing, {
+        status: "available",
+        acceptedBy: null,
+        acceptedAt: null,
+        visibility: "all_sellers",
+        superSellerRejected: true,
+        superSellerRejectedBy: seller._id,
+        superSellerRejectedAt: new Date(),
+        rejectionReason: cleanReason,
+        rejectionImages,
+      });
       await listing.save();
 
-      // ── Email: notify user their listing was passed on by super seller ───
       if (listing.listedBy?.email) {
         emailService
           .sendListingRejectedEmail(listing.listedBy.email, {
@@ -1033,14 +1074,12 @@ exports.rejectListing = async (req, res) => {
             listingId: listing._id,
             deviceName: listing.model,
             finalPrice: listing.finalPrice,
-            reason: reason?.trim() || null,
+            reason: cleanReason,
+            rejectionImages,
             sellerType: "super_seller",
           })
           .catch((err) =>
-            console.error(
-              "sendListingRejectedEmail (super_seller) error:",
-              err,
-            ),
+            console.error("sendListingRejectedEmail (super_seller):", err),
           );
       }
 
@@ -1051,19 +1090,23 @@ exports.rejectListing = async (req, res) => {
           listingId: listing._id,
           visibility: "all_sellers",
           status: "available",
-          reason: reason?.trim() || null,
+          reason: cleanReason,
+          rejectionImages,
         },
       });
     }
 
-    listing.status = "available";
-    listing.acceptedBy = null;
-    listing.acceptedAt = null;
-    listing.rejectedAt = new Date();
-    listing.rejectionReason = reason?.trim() || null;
+    // ── 5. Regular-seller path ───────────────────────────────────────────────
+    Object.assign(listing, {
+      status: "available",
+      acceptedBy: null,
+      acceptedAt: null,
+      rejectedAt: new Date(),
+      rejectionReason: cleanReason,
+      rejectionImages,
+    });
     await listing.save();
 
-    // ── Email: notify user their listing was passed on by regular seller ───
     if (listing.listedBy?.email) {
       emailService
         .sendListingRejectedEmail(listing.listedBy.email, {
@@ -1071,11 +1114,12 @@ exports.rejectListing = async (req, res) => {
           listingId: listing._id,
           deviceName: listing.model,
           finalPrice: listing.finalPrice,
-          reason: reason?.trim() || null,
+          reason: cleanReason,
+          rejectionImages,
           sellerType: "seller",
         })
         .catch((err) =>
-          console.error("sendListingRejectedEmail (seller) error:", err),
+          console.error("sendListingRejectedEmail (seller):", err),
         );
     }
 
@@ -1087,7 +1131,8 @@ exports.rejectListing = async (req, res) => {
         listingId: listing._id,
         visibility: listing.visibility,
         status: "available",
-        reason: reason?.trim() || null,
+        reason: cleanReason,
+        rejectionImages,
       },
     });
   } catch (error) {

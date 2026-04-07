@@ -17,49 +17,6 @@ import ActionModal from "../components/Seller/ActionModal";
 const BASE_URL   = import.meta.env.VITE_API_URL   || "http://localhost:3000/api";
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
 
-const authFetch = async (endpoint, options = {}) => {
-  const token = localStorage.getItem("accessToken");
-  const res   = await fetch(`${BASE_URL}${endpoint}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Request failed");
-  return data;
-};
-
-const multipartFetch = async (endpoint, fd) => {
-  const token = localStorage.getItem("accessToken");
-  const res   = await fetch(`${BASE_URL}${endpoint}`, {
-    method: "POST",
-    headers: { ...(token && { Authorization: `Bearer ${token}` }) },
-    body: fd,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Request failed");
-  return data;
-};
-
-const apiGetMessages  = (id)          => authFetch(`/messages?receiverId=${id}`);
-const apiDeleteMessage = (id)         => authFetch(`/messages/${id}`, { method: "DELETE" });
-const apiSendMessage  = (id, msg, img) => {
-  if (img) {
-    const f = new FormData();
-    f.append("receiverId", id);
-    f.append("message", msg || "");
-    f.append("image", img);
-    return multipartFetch("/messages/send", f);
-  }
-  return authFetch("/messages/send", {
-    method: "POST",
-    body: JSON.stringify({ receiverId: id, message: msg }),
-  });
-};
-
 // ─── Normalization ────────────────────────────────────────────────────────────
 const normalizeSellerEntry = (entry) => {
   const sub = entry.subscription ?? {};
@@ -170,6 +127,49 @@ const StatCard = ({ label, value, color, bg, border, loading }) => (
     )}
   </div>
 );
+
+const authFetch = async (endpoint, options = {}) => {
+  const token = localStorage.getItem("accessToken");
+  const res   = await fetch(`${BASE_URL}${endpoint}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    },
+    ...options,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Request failed");
+  return data;
+};
+
+const multipartFetch = async (endpoint, fd) => {
+  const token = localStorage.getItem("accessToken");
+  const res   = await fetch(`${BASE_URL}${endpoint}`, {
+    method: "POST",
+    headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+    body: fd,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Request failed");
+  return data;
+};
+
+const apiGetMessages  = (id)          => authFetch(`/messages?receiverId=${id}`);
+const apiDeleteMessage = (id)         => authFetch(`/messages/${id}`, { method: "DELETE" });
+const apiSendMessage  = (id, msg, img) => {
+  if (img) {
+    const f = new FormData();
+    f.append("receiverId", id);
+    f.append("message", msg || "");
+    f.append("image", img);
+    return multipartFetch("/messages/send", f);
+  }
+  return authFetch("/messages/send", {
+    method: "POST",
+    body: JSON.stringify({ receiverId: id, message: msg }),
+  });
+};
 
 
 // ─── Order Card (mobile) ──────────────────────────────────────────────────────

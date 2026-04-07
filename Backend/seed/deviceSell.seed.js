@@ -217,36 +217,45 @@ const parseSpecDoc = (docxPath) => {
 
   return specMap;
 };
+
+async function fetchExistingPublicIds() {
+  const ids = new Set();
+  let nextCursor;
+ 
+  do {
+    const result = await cloudinary.api.resources({
+      type:        "upload",
+      prefix:      "cashify/models/",   // scoped to our folder only
+      max_results: 500,                 // maximum allowed per page
+      ...(nextCursor ? { next_cursor: nextCursor } : {}),
+    });
+ 
+    for (const r of result.resources || []) {
+      ids.add(r.public_id);
+    }
+ 
+    nextCursor = result.next_cursor;
+  } while (nextCursor);
+ 
+  return ids;
+}
 // ─── Upload one image buffer to Cloudinary ────────────────────────────────────
 // cloudinary v2 upload_stream API is unchanged — still callback-based
 function uploadToCloudinary(buffer, publicId) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        folder: "cashify/models",
-        public_id: publicId,
-        resource_type: "image",
-        overwrite: true,
+        folder:         "cashify/models",
+        public_id:      publicId,
+        resource_type:  "image",
+        overwrite:      false,    // never overwrite existing — skip is handled before this call
         transformation: [{ quality: "auto", fetch_format: "auto" }],
       },
-      (err, result) => (err ? reject(err) : resolve(result.secure_url)),
+      (err, result) => (err ? reject(err) : resolve(result.secure_url))
     );
     stream.end(buffer);
   });
 }
-
-async function getExistingImage(publicId) {
-  try {
-    const result = await cloudinary.api.resource(publicId);
-    return result.secure_url; // already uploaded
-  } catch (err) {
-    if (err.http_code === 404) {
-      return null; // not found → upload needed
-    }
-    throw err; // real error
-  }
-}
-
 function buildModels(imageMap, brand) {
   const seen = new Set();
 
@@ -285,59 +294,84 @@ function toSlug(str) {
  * We store both forms so the lookup always succeeds.
  */
 async function uploadAllImages() {
-  const imageMap = {}; // brand → { shortName → url, fullDocName → url }
-
-  for (const { docxPath, brand, category } of IMAGE_DOCS) {
+  // ── One-time bulk fetch of everything already on Cloudinary ────────────────
+  console.log("\n  🔍 Fetching existing Cloudinary images (cashify/models/)...");
+  let uploadedIds;
+  try {
+    uploadedIds = await fetchExistingPublicIds();
+    console.log(`  📋 Found ${uploadedIds.size} existing images on Cloudinary\n`);
+  } catch (err) {
+    // If Cloudinary creds are wrong or network is down, fail loudly
+    console.error("  ❌ Could not reach Cloudinary:", err.message);
+    throw err;
+  }
+ 
+  const imageMap = {};
+  const stats = { uploaded: 0, skipped: 0, failed: 0 };
+ 
+  for (const { docxPath, brand } of IMAGE_DOCS) {
     if (!fs.existsSync(docxPath)) {
-      console.warn(`  ⚠️  Doc not found, skipping image upload: ${docxPath}`);
+      console.warn(`  ⚠️  Doc not found, skipping: ${path.basename(docxPath)}`);
       continue;
     }
-
-    console.log(`\n  📄 Parsing ${path.basename(docxPath)} ...`);
-    const pairs = parseDocx(docxPath);
-    console.log(`     ${pairs.length} entries found`);
-
-    const zip = new AdmZip(docxPath);
+ 
     if (!imageMap[brand]) imageMap[brand] = {};
-
+ 
+    console.log(`  📄 Processing ${path.basename(docxPath)} (${brand})...`);
+ 
+    const pairs = parseDocx(docxPath);
+    const zip   = new AdmZip(docxPath);
+ 
     for (const { name: docName, imageFile } of pairs) {
-      const entry = zip.getEntry(`word/media/${imageFile}`);
-      if (!entry) {
-        console.warn(`     ⚠️  Missing media: ${imageFile} for "${docName}"`);
-        continue;
+      const brandSlug = toSlug(brand);
+      const nameSlug  = toSlug(docName);
+      const publicId  = `${brandSlug}_${nameSlug}`;              // e.g. apple_apple_iphone_16_pro
+      const fullId    = `cashify/models/${publicId}`;            // what Cloudinary stores
+ 
+      let url;
+ 
+      if (uploadedIds.has(fullId)) {
+        // ── Already on Cloudinary → build the URL from the public_id ─────────
+        // secure_url format: https://res.cloudinary.com/<cloud>/image/upload/<public_id>
+        url = cloudinary.url(fullId, { secure: true });
+        stats.skipped++;
+        process.stdout.write(`     ⏭  ${docName.padEnd(44)} skipped\n`);
+      } else {
+        // ── New image → upload it ─────────────────────────────────────────────
+        const entry = zip.getEntry(`word/media/${imageFile}`);
+        if (!entry) {
+          console.warn(`     ⚠️  Missing media: ${imageFile} for "${docName}"`);
+          stats.failed++;
+          continue;
+        }
+ 
+        try {
+          url = await uploadToCloudinary(entry.getData(), publicId);
+          uploadedIds.add(fullId);   // keep Set current for this run
+          stats.uploaded++;
+          process.stdout.write(`     ☁️  ${docName.padEnd(44)} uploaded\n`);
+        } catch (err) {
+          console.error(`     ❌ Upload failed for "${docName}": ${err.message}`);
+          stats.failed++;
+          continue;
+        }
       }
-
-      const publicId = `cashify/models/${toSlug(brand)}_${toSlug(docName)}`
-      let url = null;
-
-// STEP 1: Try Cloudinary
-try {
-  url = await getExistingImage(publicId);
-} catch (err) {
-  console.warn(`⚠️ Cloudinary check failed for "${docName}"`);
-}
-
-// STEP 2: If not found → use fallback
-if (!url) {
-  console.log(`⏭️ No Cloudinary image, using fallback for ${docName}`);
-
-  // 👉 fallback (safe default)
-  url = "https://via.placeholder.com/300x300?text=No+Image";
-}
-
-// STEP 3: Always store (IMPORTANT)
-console.log(`✅ Image set for ${docName}`);
-
-imageMap[brand][docName] = url;
-
-const shortName = docName
-  .replace(new RegExp(`^${brand}\\s+`, "i"), "")
-  .trim();
-
-imageMap[brand][shortName] = url;
+ 
+      // Store under both the full doc name and the brand-stripped short name
+      imageMap[brand][docName] = url;
+      const shortName = docName.replace(new RegExp(`^${brand}\\s+`, "i"), "").trim();
+      imageMap[brand][shortName] = url;
     }
   }
-
+ 
+  console.log(`
+  ┌─────────────────────────────────┐
+  │  Image phase complete           │
+  │  ☁️  Uploaded : ${String(stats.uploaded).padEnd(16)}│
+  │  ⏭  Skipped  : ${String(stats.skipped).padEnd(16)}│
+  │  ❌ Failed   : ${String(stats.failed).padEnd(16)}│
+  └─────────────────────────────────┘`);
+ 
   return imageMap;
 }
 
@@ -2061,68 +2095,76 @@ async function seed() {
     console.log("🚀 Seeding started...");
 
     await mongoose.connect(MONGO_URI);
-    console.log("✅ MongoDB connected");
+    console.log("✅ MongoDB connected\n");
 
-    const imageMap = await uploadAllImages();
+    // ── Phase 1: Images ───────────────────────────────────────────────────────
+    const imageMap    = await uploadAllImages();
     const catalogSeed = buildCatalogSeed(imageMap);
 
-    // ── CONFIG UPSERT ─────────────────────────────
-    console.log("⚙️ Updating evaluation config...");
+    // ── Phase 2: EvaluationConfig upsert ─────────────────────────────────────
+    console.log("⚙️  Updating evaluation configs...");
 
     for (const config of evaluationConfigSeed) {
-      const query = config.brand
-        ? { category: config.category, brand: config.brand }
-        : { category: config.category };
-
+      // config.brand never exists in evaluationConfigSeed so the query is
+      // simply { category } — kept explicit and clean
       await EvaluationConfig.findOneAndUpdate(
-        query,
+        { category: config.category },
         { $set: config },
         { upsert: true, new: true },
       );
+      console.log(`   ✅ ${config.category}`);
     }
 
-    // ── CATALOG UPSERT ────────────────────────────
-    console.log("📱 Updating device catalog...");
+    // ── Phase 3: DeviceCatalog upsert ─────────────────────────────────────────
+    console.log("\n📱 Updating device catalog...");
 
     for (const catalog of catalogSeed) {
       const existing = await DeviceCatalog.findOne({
-        brand: catalog.brand,
+        brand:    catalog.brand,
         category: catalog.category,
       });
 
       if (!existing) {
         await DeviceCatalog.create(catalog);
-        console.log(`➕ Added ${catalog.brand}`);
-      } else {
-        let added = 0;
-        let updated = 0;
-
-        for (const newModel of catalog.models) {
-          const existingModel = existing.models.find(
-            (m) => m.name === newModel.name,
-          );
-
-          if (!existingModel) {
-            existing.models.push(newModel);
-            added++;
-          } else {
-            existingModel.image = newModel.image;
-            existingModel.variants = newModel.variants;
-            updated++;
-          }
-        }
-
-        await existing.save();
-
-        console.log(`🔄 ${catalog.brand}: +${added} added, ${updated} updated`);
+        console.log(`   ➕ Created  ${catalog.brand} (${catalog.models.length} models)`);
+        continue;
       }
+
+      let added   = 0;
+      let updated = 0;
+
+      for (const newModel of catalog.models) {
+        const existingModel = existing.models.find(
+          (m) => m.name === newModel.name,
+        );
+
+        if (!existingModel) {
+          existing.models.push(newModel);
+          added++;
+        } else {
+          // Direct field assignment on a Mongoose subdoc array requires
+          // markModified() so Mongoose knows the nested object changed
+          existingModel.image    = newModel.image;
+          existingModel.variants = newModel.variants;
+          updated++;
+        }
+      }
+
+      // Tell Mongoose the subdocument array was mutated
+      existing.markModified("models");
+      await existing.save();
+
+      console.log(`   🔄 Updated  ${catalog.brand}: +${added} new, ${updated} refreshed`);
     }
 
-    console.log("🎉 SEED COMPLETED (SAFE MODE)");
-    process.exit(0);
-  } catch (error) {
-    console.error("❌ Seed failed:", error);
+    console.log("\n🎉 Seed completed successfully!");
+  } catch (err) {
+    console.error("❌ Seed failed:", err);
     process.exit(1);
+  } finally {
+    // Always disconnect — whether success or error
+    await mongoose.disconnect();
+    console.log("🔌 MongoDB disconnected");
   }
 }
 

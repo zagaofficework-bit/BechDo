@@ -39,16 +39,12 @@ const deviceListingSchema = new mongoose.Schema(
     model:    { type: String, required: true },
     image:    { type: String, default: null },
 
-    // ── Flexible specs (replaces ram/storage hardcoding) ─────────
-    // mobile/tablet → { ram, storage }
-    // laptop        → { ram, storage, processor }
-    // smartwatch    → { caseSize, connectivity }
-    // television    → { screenSize, resolution, displayType }
+    // ── Flexible specs ───────────────────────────────────────────
     specs: { type: Map, of: String, default: {} },
 
-    // ── Evaluation (generic — questions differ per category) ─────
+    // ── Evaluation ───────────────────────────────────────────────
     evaluation: {
-      answers:  { type: Map, of: Boolean, default: {} }, // e.g. { can_make_calls: true }
+      answers:  { type: Map, of: Boolean, default: {} },
       defects: [
         {
           key:       { type: String },
@@ -93,6 +89,16 @@ const deviceListingSchema = new mongoose.Schema(
     completedAt:     { type: Date, default: null },
     rejectedAt:      { type: Date, default: null },
     rejectionReason: { type: String, default: null },
+
+    // ── Rejection evidence images (up to 3) ─────────────────────
+    rejectionImages: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: (arr) => arr.length <= 3,
+        message:   "A maximum of 3 rejection images are allowed",
+      },
+    },
   },
   { timestamps: true }
 );

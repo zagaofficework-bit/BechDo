@@ -1,139 +1,130 @@
+// upload.middleware.js — full file with rejectionUpload added
+// Add the new exports at the bottom; everything else is unchanged.
+
 const multer = require("multer");
 
-// ALLOWED FILE TYPES
+// ── Constants ────────────────────────────────────────────────────────────────
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/mov", "video/avi", "video/mkv"];
 
-const MAX_IMAGE_SIZE = 5  * 1024 * 1024; // 5MB per image
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB for video
+const MAX_IMAGE_SIZE = 5  * 1024 * 1024; // 5 MB per image
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50 MB for video
 
-
-// STORAGE — memory storage (buffer sent to Cloudinary)
+// ── Shared memory storage ────────────────────────────────────────────────────
 const storage = multer.memoryStorage();
 
-
-// FILE FILTER — only allow images and videos
+// ── File filter ──────────────────────────────────────────────────────────────
 function fileFilter(req, file, cb) {
   const isImage = ALLOWED_IMAGE_TYPES.includes(file.mimetype);
   const isVideo = ALLOWED_VIDEO_TYPES.includes(file.mimetype);
-
-  if (isImage || isVideo) {
-    cb(null, true);
-  } else {
-    cb(
-      new Error(
-        `Invalid file type: ${file.mimetype}. Only images (jpeg, jpg, png, webp) and videos (mp4, mov, avi, mkv) are allowed`
-      ),
-      false
-    );
-  }
+  if (isImage || isVideo) return cb(null, true);
+  cb(
+    new Error(
+      `Invalid file type: ${file.mimetype}. ` +
+      "Only images (jpeg, jpg, png, webp) and videos (mp4, mov, avi, mkv) are allowed"
+    ),
+    false
+  );
 }
 
+// ── Image-only filter (for rejection uploads) ────────────────────────────────
+function imageOnlyFilter(req, file, cb) {
+  if (ALLOWED_IMAGE_TYPES.includes(file.mimetype)) return cb(null, true);
+  cb(
+    new Error(
+      `Invalid file type: ${file.mimetype}. Only jpeg, jpg, png, webp images are allowed`
+    ),
+    false
+  );
+}
 
-// MULTER INSTANCE
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: MAX_VIDEO_SIZE,
-    files: 6,                 
-  },
-});
+// ── Base multer instance ─────────────────────────────────────────────────────
+const upload = multer({ storage, fileFilter, limits: { fileSize: MAX_VIDEO_SIZE, files: 6 } });
 
-
-// PRODUCT UPLOAD MIDDLEWARE
+// ── Product upload ───────────────────────────────────────────────────────────
 const productUpload = upload.fields([
   { name: "images", maxCount: 5 },
   { name: "video",  maxCount: 1 },
 ]);
 
-
-// VALIDATE FILE SIZES PER FIELD
 function validateProductFiles(req, res, next) {
-  // Validate each image is under 5MB
   if (req.files?.images) {
     for (const image of req.files.images) {
-      if (image.size > MAX_IMAGE_SIZE) {
-        return res.status(400).json({
-          message: `Image "${image.originalname}" exceeds 5MB limit`,
-        });
-      }
+      if (image.size > MAX_IMAGE_SIZE)
+        return res.status(400).json({ message: `Image "${image.originalname}" exceeds 5 MB limit` });
     }
   }
-
-  // Validate video is under 50MB
   if (req.files?.video) {
     const video = req.files.video[0];
-    if (video.size > MAX_VIDEO_SIZE) {
-      return res.status(400).json({
-        message: `Video "${video.originalname}" exceeds 50MB limit`,
-      });
-    }
+    if (video.size > MAX_VIDEO_SIZE)
+      return res.status(400).json({ message: `Video "${video.originalname}" exceeds 50 MB limit` });
   }
-
   next();
 }
 
-// PROFILE PIC UPLOAD — single image only
+// ── Profile pic upload ───────────────────────────────────────────────────────
 const profileUpload = multer({
   storage,
   fileFilter,
-  limits: {
-    fileSize: MAX_IMAGE_SIZE,  // 5MB max
-    files: 1,
-  },
-}).single("profilePic");      // ← field name must be "profilePic" in Postman
+  limits: { fileSize: MAX_IMAGE_SIZE, files: 1 },
+}).single("profilePic");
 
-// REVIEW UPLOAD MIDDLEWARE — 5 images + 1 video
+// ── Review upload ────────────────────────────────────────────────────────────
 const reviewUpload = multer({
   storage,
   fileFilter,
-  limits: {
-    fileSize: MAX_VIDEO_SIZE,  // 50MB ceiling (per-file size validated below)
-    files:    6,               // max 5 images + 1 video
-  },
+  limits: { fileSize: MAX_VIDEO_SIZE, files: 6 },
 }).fields([
   { name: "images", maxCount: 5 },
   { name: "video",  maxCount: 1 },
 ]);
 
-
-// Chat Images 
-const ChatUpload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: MAX_IMAGE_SIZE,  // 5MB max
-    files: 1,
-  },
-}).single("image");
-
-
-// VALIDATE REVIEW FILE SIZES
 function validateReviewFiles(req, res, next) {
   if (req.files?.images) {
     for (const image of req.files.images) {
-      if (image.size > MAX_IMAGE_SIZE) {
-        return res.status(400).json({
-          message: `Image "${image.originalname}" exceeds 5MB limit`,
-        });
-      }
+      if (image.size > MAX_IMAGE_SIZE)
+        return res.status(400).json({ message: `Image "${image.originalname}" exceeds 5 MB limit` });
     }
   }
-
   if (req.files?.video) {
     const video = req.files.video[0];
-    if (video.size > MAX_VIDEO_SIZE) {
-      return res.status(400).json({
-        message: `Video "${video.originalname}" exceeds 50MB limit`,
-      });
-    }
+    if (video.size > MAX_VIDEO_SIZE)
+      return res.status(400).json({ message: `Video "${video.originalname}" exceeds 50 MB limit` });
   }
-
   next();
 }
 
-// EXPORT
+// ── Chat image upload ────────────────────────────────────────────────────────
+const ChatUpload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: MAX_IMAGE_SIZE, files: 1 },
+}).single("image");
+
+// ── Rejection images upload ───────────────────────────────────────────────────
+// Used on:  POST /api/device-listings/:listingId/reject
+// Accepts:  up to 3 images (jpeg / png / webp), each ≤ 5 MB
+// Field name: "images"
+const rejectionUpload = multer({
+  storage,
+  fileFilter: imageOnlyFilter,
+  limits: { fileSize: MAX_IMAGE_SIZE, files: 3 },
+}).fields([{ name: "images", maxCount: 3 }]);
+
+/** Size-guard for rejection images — call after rejectionUpload */
+function validateRejectionFiles(req, res, next) {
+  if (req.files?.images) {
+    for (const image of req.files.images) {
+      if (image.size > MAX_IMAGE_SIZE)
+        return res
+          .status(400)
+          .json({ message: `Image "${image.originalname}" exceeds 5 MB limit` });
+    }
+  }
+  next();
+}
+
+// ── Exports ──────────────────────────────────────────────────────────────────
 module.exports = {
   productUpload,
   validateProductFiles,
@@ -141,4 +132,7 @@ module.exports = {
   reviewUpload,
   validateReviewFiles,
   ChatUpload,
+  // ↓ new
+  rejectionUpload,
+  validateRejectionFiles,
 };
