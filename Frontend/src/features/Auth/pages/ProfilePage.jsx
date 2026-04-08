@@ -183,7 +183,7 @@ const ADDR_EMPTY = {
   isDefault: false,
 };
 
-const BASE_URL_ADDR = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const BASE_URL_ADDR = import.meta.env.VITE_URL || "http://localhost:3000";
 
 const AddressModal = ({ initial, onSave, onClose, saving }) => {
   const [form, setForm] = useState(initial ?? ADDR_EMPTY);

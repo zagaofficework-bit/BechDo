@@ -1,7 +1,7 @@
 // ─── profile.api.js ──────────────────────────────────────────────────────────
 // Mirrors the same request/multipartRequest pattern from your existing api file.
 
-const BASE_URL = "http://localhost:3000/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 const request = async (endpoint, options = {}) => {
   const token = localStorage.getItem("accessToken");

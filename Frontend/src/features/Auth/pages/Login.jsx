@@ -1,8 +1,9 @@
-//Login.jsx
+// Login.jsx
 
 import React, { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
+import GoogleAuthButton from "../components/GoogleAuthButton";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -10,13 +11,12 @@ export default function Login() {
   const [sending, setSending] = useState(false);
 
   const navigate = useNavigate();
-  const { user, isAuthenticated, initializing, handleLogin, error } = useAuth();
+  const { user, isAuthenticated, initializing, handleLogin, handleGoogleAuth, error } =
+    useAuth();
 
   if (!initializing && isAuthenticated) {
-    if (user?.role === "admin")
-      return <Navigate to="/admin-dashboard" replace />;
-    if (user?.role === "seller")
-      return <Navigate to="/seller-dashboard" replace />;
+    if (user?.role === "admin") return <Navigate to="/admin-dashboard" replace />;
+    if (user?.role === "seller") return <Navigate to="/seller-dashboard" replace />;
     return <Navigate to="/" replace />;
   }
 
@@ -35,10 +35,37 @@ export default function Login() {
     const result = await handleLogin({ email });
     setSending(false);
     if (result?.success !== false) {
-      // or check your auth hook's return shape
       navigate("/otp", { state: { email, otpTarget: "login" } });
     }
   };
+
+  // ── Google handler ─────────────────────────────────────────────────────────
+  const handleGoogleSuccess = async (credential) => {
+    const result = await handleGoogleAuth(credential);
+    if (result?.success) {
+      // If brand-new user and needs mobile → send them to profile completion
+      if (result.requiresMobile) {
+        navigate("/", {
+          state: { requiresMobile: true },
+          replace: true,
+        });
+        return;
+      }
+      // Redirect based on role
+      const role = result.user?.role;
+      if (role === "admin") navigate("/admin-dashboard", { replace: true });
+      else if (role === "seller") navigate("/seller-dashboard", { replace: true });
+      else navigate("/", { replace: true });
+    }
+  };
+
+  const handleGoogleError = (message) => {
+    // The error is already set inside handleGoogleAuth via setError,
+    // but we can also handle it here if needed.
+    console.error("[Login] Google error:", message);
+  };
+  // ──────────────────────────────────────────────────────────────────────────
+
   return (
     <div
       className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md z-50 p-4"
@@ -72,16 +99,10 @@ export default function Login() {
                 stroke="currentColor"
                 strokeWidth={2.5}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 13l4 4L19 7"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <span className="text-white font-bold text-sm tracking-wide">
-              Phonify
-            </span>
+            <span className="text-white font-bold text-sm tracking-wide">Phonify</span>
           </div>
 
           {/* Center text */}
@@ -108,9 +129,7 @@ export default function Login() {
                 className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-xl px-3 py-2"
               >
                 <span className="text-sm">{item.icon}</span>
-                <span className="text-gray-300 text-xs font-medium">
-                  {item.label}
-                </span>
+                <span className="text-gray-300 text-xs font-medium">{item.label}</span>
               </div>
             ))}
           </div>
@@ -124,18 +143,8 @@ export default function Login() {
               onClick={() => navigate(-1)}
               className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 transition-colors font-semibold"
             >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 19l-7-7 7-7"
-                />
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               Back
             </button>
@@ -143,36 +152,20 @@ export default function Login() {
               onClick={() => navigate("/")}
               className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-400 transition-all"
             >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
           {/* Heading */}
-          <div className="mb-8">
+          <div className="mb-6">
             <div
               className="inline-flex items-center gap-2 rounded-full px-3 py-1 mb-4"
               style={{ background: "#e8f4fd", border: "1px solid #cce4f6" }}
             >
-              <div
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: "#0077b6" }}
-              />
-              <span
-                className="text-xs font-semibold"
-                style={{ color: "#0077b6" }}
-              >
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#0077b6" }} />
+              <span className="text-xs font-semibold" style={{ color: "#0077b6" }}>
                 Secure Login
               </span>
             </div>
@@ -182,8 +175,25 @@ export default function Login() {
               your account
             </h2>
             <p className="text-sm text-gray-400">
-              Enter your email and we'll send you a code
+              Enter your email or continue with Google
             </p>
+          </div>
+
+          {/* ── Google Sign-In ── */}
+          <div className="mb-4">
+            <GoogleAuthButton
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              label="Sign in with Google"
+              disabled={sending}
+            />
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400 font-medium">or continue with email</span>
+            <div className="flex-1 h-px bg-gray-200" />
           </div>
 
           {/* Email input */}
@@ -197,15 +207,11 @@ export default function Login() {
               }`}
               style={
                 email && isValid
-                  ? {
-                      borderColor: "#0077b6",
-                      background: "rgba(0,119,182,0.03)",
-                    }
+                  ? { borderColor: "#0077b6", background: "rgba(0,119,182,0.03)" }
                   : !email
-                    ? { borderColor: "#e5e7eb", background: "#f9fafb" }
-                    : {}
+                  ? { borderColor: "#e5e7eb", background: "#f9fafb" }
+                  : {}
               }
-              onFocus={() => {}}
             >
               <svg
                 className="w-4 h-4 mr-3 flex-shrink-0 transition-colors"
@@ -233,8 +239,7 @@ export default function Login() {
                   if (!email || !isValid) {
                     e.target.parentElement.style.borderColor = "#0077b6";
                     e.target.parentElement.style.background = "#fff";
-                    e.target.parentElement.style.boxShadow =
-                      "0 0 0 4px rgba(0,119,182,0.08)";
+                    e.target.parentElement.style.boxShadow = "0 0 0 4px rgba(0,119,182,0.08)";
                   }
                 }}
                 onBlur={(e) => {
@@ -254,43 +259,23 @@ export default function Login() {
                   stroke="currentColor"
                   strokeWidth={2.5}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               )}
             </div>
 
             {email && !isValid && (
               <p className="text-red-500 text-xs mt-2 flex items-center gap-1.5 font-medium">
-                <svg
-                  className="w-3 h-3 flex-shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
+                <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
                 Please enter a valid email address
               </p>
             )}
             {error && (
               <p className="text-red-500 text-xs mt-2 flex items-center gap-1.5 font-medium">
-                <svg
-                  className="w-3 h-3 flex-shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
+                <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
                 {error}
               </p>
@@ -298,7 +283,7 @@ export default function Login() {
           </div>
 
           {/* Terms */}
-          <div className="flex items-start gap-3 mb-6 bg-gray-50 rounded-2xl px-4 py-3">
+          <div className="flex items-start gap-3 mb-5 bg-gray-50 rounded-2xl px-4 py-3">
             <input
               type="checkbox"
               checked
@@ -308,19 +293,11 @@ export default function Login() {
             />
             <span className="text-xs text-gray-500 leading-relaxed">
               I agree to the{" "}
-              <a
-                href="#"
-                className="font-semibold hover:underline"
-                style={{ color: "#0077b6" }}
-              >
+              <a href="#" className="font-semibold hover:underline" style={{ color: "#0077b6" }}>
                 Terms and Conditions
               </a>{" "}
               and{" "}
-              <a
-                href="#"
-                className="font-semibold hover:underline"
-                style={{ color: "#0077b6" }}
-              >
+              <a href="#" className="font-semibold hover:underline" style={{ color: "#0077b6" }}>
                 Privacy Policy
               </a>
             </span>
@@ -333,31 +310,21 @@ export default function Login() {
             className="w-full py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2"
             style={
               isValid && !sending
-                ? {
-                    background: "#0077b6",
-                    color: "#fff",
-                    boxShadow: "0 4px 14px rgba(0,119,182,0.3)",
-                  }
-                : {
-                    background: "#f3f4f6",
-                    color: "#9ca3af",
-                    cursor: "not-allowed",
-                  }
+                ? { background: "#0077b6", color: "#fff", boxShadow: "0 4px 14px rgba(0,119,182,0.3)" }
+                : { background: "#f3f4f6", color: "#9ca3af", cursor: "not-allowed" }
             }
             onMouseEnter={(e) => {
               if (isValid && !sending) {
                 e.currentTarget.style.background = "#005f8f";
                 e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow =
-                  "0 6px 18px rgba(0,119,182,0.35)";
+                e.currentTarget.style.boxShadow = "0 6px 18px rgba(0,119,182,0.35)";
               }
             }}
             onMouseLeave={(e) => {
               if (isValid && !sending) {
                 e.currentTarget.style.background = "#0077b6";
                 e.currentTarget.style.transform = "";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 14px rgba(0,119,182,0.3)";
+                e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,119,182,0.3)";
               }
             }}
           >
@@ -366,18 +333,8 @@ export default function Login() {
             )}
             {sending ? "Sending OTP…" : "Continue"}
             {isValid && !sending && (
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
             )}
           </button>
@@ -404,10 +361,7 @@ function FullScreenSpinner() {
     <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
       <div
         className="w-8 h-8 rounded-full animate-spin"
-        style={{
-          border: "3px solid rgba(0,119,182,0.15)",
-          borderTopColor: "#0077b6",
-        }}
+        style={{ border: "3px solid rgba(0,119,182,0.15)", borderTopColor: "#0077b6" }}
       />
     </div>
   );

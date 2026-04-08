@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: import.meta.env.VITE_URL || "http://localhost:3000",
   withCredentials: true,
 });
 
@@ -28,7 +28,7 @@ api.interceptors.response.use(
 
       try {
         const res = await axios.post(
-          "http://localhost:3000/api/auth/refresh-token",
+          `${import.meta.env.VITE_URL || "http://localhost:3000"}/api/auth/refresh-token`,
           {},
           { withCredentials: true }
         );
@@ -37,7 +37,6 @@ api.interceptors.response.use(
         localStorage.setItem("accessToken", newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
-
       } catch (refreshError) {
         localStorage.removeItem("accessToken");
         window.location.href = "/";
@@ -68,13 +67,13 @@ export async function verifyRegisterOtp({ otp, sessionToken }) {
   return response.data;
 }
 
-//login step 1: send OTP
+// Login step 1: send OTP
 export async function login({ email }) {
   const response = await api.post("/api/auth/login", { email });
   return response.data;
 }
 
-//login otp verification
+// Login OTP verification
 export async function verifyLoginOtp({ otp, sessionToken }) {
   const response = await api.post("/api/auth/login/verify-otp", {
     otp,
@@ -83,13 +82,22 @@ export async function verifyLoginOtp({ otp, sessionToken }) {
   return response.data;
 }
 
-//Logout
+/**
+ * Google Sign-In / Sign-Up
+ * @param {string} credential - Google ID token from Google One Tap or OAuth popup
+ */
+export async function googleAuth(credential) {
+  const response = await api.post("/api/auth/google", { credential });
+  return response.data;
+}
+
+// Logout
 export async function logout() {
   const response = await api.post("/api/auth/logout");
   return response.data;
 }
 
-//get me
+// Get me
 export async function getMe() {
   const response = await api.get("/api/auth/me");
   return response.data;

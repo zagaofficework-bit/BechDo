@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 
 // ─── API ──────────────────────────────────────────────────────────────────────
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const BASE_URL = import.meta.env.VITE_URL || "http://localhost:3000";
 
 async function fetchNearbyProducts({ latitude, longitude, radius = 10, limit = 48 }) {
   const params = new URLSearchParams({ latitude, longitude, radius, limit });

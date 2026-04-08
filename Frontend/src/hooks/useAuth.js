@@ -6,6 +6,7 @@ import {
   verifyRegisterOtp,
   register,
   logout,
+  googleAuth,
 } from "../services/auth.api";
 
 export const useAuth = () => {
@@ -41,14 +42,17 @@ export const useAuth = () => {
     setLoading(true);
     if (!email || !firstname || !lastname || !mobile) {
       setError("All fields are required");
+      setLoading(false);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Invalid email address");
+      setLoading(false);
       return;
     }
     if (!/^\d{10}$/.test(mobile)) {
       setError("Mobile number must be 10 digits");
+      setLoading(false);
       return;
     }
     try {
@@ -57,12 +61,14 @@ export const useAuth = () => {
       setOtpSent(true);
       setOtpTarget("register");
       setSuccessMessage(data.message || "OTP sent to your email");
+      return { success: true };
     } catch (err) {
       setError(
-        err?.response?.data?.message || "Registration failed. Please try again",
+        err?.response?.data?.message || "Registration failed. Please try again"
       );
+      return { success: false };
     } finally {
-      setLoading(false); // ← ADD
+      setLoading(false);
     }
   };
 
@@ -75,7 +81,8 @@ export const useAuth = () => {
     setLoading(true);
     if (!otp || otp.length < 4) {
       setError("Please enter a valid OTP");
-      return;
+      setLoading(false);
+      return { success: false };
     }
     try {
       const sessionToken = getSessionToken();
@@ -90,14 +97,15 @@ export const useAuth = () => {
       clearSessionToken();
       setOtpSent(false);
       setSuccessMessage("Registered successfully!");
-      return { success: true }; // ← ADD THIS
+      return { success: true };
     } catch (err) {
       setError(err?.response?.data?.message || "Invalid or expired OTP");
-      return { success: false }; // ← ADD THIS
+      return { success: false };
     } finally {
-      setLoading(false); // ← ADD
+      setLoading(false);
     }
   };
+
   ////////////////////////////////////////////////////////////////////
   //// LOGIN
   ////////////////////////////////////////////////////////////////////
@@ -107,10 +115,12 @@ export const useAuth = () => {
     setLoading(true);
     if (!email) {
       setError("Email is required");
+      setLoading(false);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Invalid email address");
+      setLoading(false);
       return;
     }
     try {
@@ -119,12 +129,14 @@ export const useAuth = () => {
       setOtpSent(true);
       setOtpTarget("login");
       setSuccessMessage(data.message || "OTP sent to your email");
+      return { success: true };
     } catch (err) {
       setError(
-        err?.response?.data?.message || "Login failed. Please try again",
+        err?.response?.data?.message || "Login failed. Please try again"
       );
+      return { success: false };
     } finally {
-      setLoading(false); // ← ADD
+      setLoading(false);
     }
   };
 
@@ -137,7 +149,8 @@ export const useAuth = () => {
     setLoading(true);
     if (!otp || otp.length < 4) {
       setError("Please enter a valid OTP");
-      return;
+      setLoading(false);
+      return { success: false };
     }
 
     try {
@@ -153,12 +166,47 @@ export const useAuth = () => {
       clearSessionToken();
       setOtpSent(false);
       setSuccessMessage("Logged in successfully!");
-      return { success: true }; // ← ADD THIS
+      return { success: true };
     } catch (err) {
       setError(err?.response?.data?.message || "Invalid or expired OTP");
-      return { success: false }; // ← ADD THIS
+      return { success: false };
     } finally {
-      setLoading(false); // ← ADD
+      setLoading(false);
+    }
+  };
+
+  ////////////////////////////////////////////////////////////////////
+  //// GOOGLE AUTH (Sign In / Sign Up)
+  ////////////////////////////////////////////////////////////////////
+
+  /**
+   * handleGoogleAuth — called after Google returns an ID token (credential).
+   * Works for both login and signup flows.
+   * @param {string} credential  — Google ID token
+   * @returns {{ success: boolean, isNewUser?: boolean, requiresMobile?: boolean }}
+   */
+  const handleGoogleAuth = async (credential) => {
+    setError(null);
+    setLoading(true);
+    try {
+      const data = await googleAuth(credential);
+      localStorage.setItem("accessToken", data.accessToken);
+      setUser(data.user);
+      setSuccessMessage(data.message || "Signed in with Google!");
+      return {
+        success: true,
+        isNewUser: data.isNewUser ?? false,
+        requiresMobile: data.requiresMobile ?? false,
+        user: data.user,
+      };
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        "Google sign-in failed. Please try again.";
+      setError(msg);
+      return { success: false };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -207,6 +255,7 @@ export const useAuth = () => {
     handleVerifyRegisterOtp,
     handleLogin,
     handleVerifyLoginOtp,
+    handleGoogleAuth,
     handleLogout,
 
     updateUser,
