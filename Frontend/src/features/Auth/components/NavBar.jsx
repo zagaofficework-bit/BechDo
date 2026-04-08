@@ -42,19 +42,30 @@ async function reverseGeocode(latitude, longitude) {
 }
 
 async function saveDetectedAddress(latitude, longitude, geocoded) {
+  // ✅ FIX: Check token BEFORE the fetch so unauthenticated users get a clear error immediately
   const token = localStorage.getItem("accessToken");
+  if (!token) throw new Error("User not authenticated");
+
   const res = await fetch(`${BASE_URL}/api/location/save-as-address`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({
-      latitude, longitude, isDefault: true,
-      street: geocoded.street || null, city: geocoded.city || null,
-      state: geocoded.state || null, pincode: geocoded.pincode || null,
-      country: geocoded.country || "India", full: geocoded.full || null,
+      latitude,
+      longitude,
+      isDefault: true,
+      street: geocoded.street || null,
+      city: geocoded.city || null,
+      state: geocoded.state || null,
+      pincode: geocoded.pincode || null,
+      country: geocoded.country || "India",
+      full: geocoded.full || null,
     }),
   });
+
   const data = await res.json();
-  if (!token) throw new Error("User not authenticated");
   if (!res.ok) throw new Error(data.message || "Failed to save address");
   return data;
 }
@@ -117,8 +128,10 @@ function LocationButton() {
     return (
       <>
         <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={handleCancel} />
-        <div className="fixed top-16 right-2 sm:right-4 z-50 bg-white rounded-2xl shadow-2xl border border-slate-100 w-[calc(100vw-16px)] sm:w-80 p-5"
-          style={{ animation: "fadeDown 0.2s ease" }}>
+        <div
+          className="fixed top-16 right-2 sm:right-4 z-50 bg-white rounded-2xl shadow-2xl border border-slate-100 w-[calc(100vw-16px)] sm:w-80 p-5"
+          style={{ animation: "fadeDown 0.2s ease" }}
+        >
           <style>{`@keyframes fadeDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
           <div className="flex items-start gap-3 mb-4">
             <div className="w-9 h-9 rounded-xl bg-[#0077b6]/10 flex items-center justify-center flex-shrink-0 text-[#0077b6]">
@@ -131,9 +144,9 @@ function LocationButton() {
           </div>
           <div className="grid grid-cols-2 gap-1.5 text-xs mb-4">
             {[
-              { label: "Street", value: preview.street },
-              { label: "City", value: preview.city },
-              { label: "State", value: preview.state },
+              { label: "Street",  value: preview.street  },
+              { label: "City",    value: preview.city    },
+              { label: "State",   value: preview.state   },
               { label: "Pincode", value: preview.pincode },
             ].map(item => (
               <div key={item.label} className="bg-slate-50 rounded-lg px-2.5 py-2">
@@ -143,12 +156,16 @@ function LocationButton() {
             ))}
           </div>
           <div className="flex gap-2">
-            <button onClick={handleCancel}
-              className="flex-1 py-2 rounded-xl text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">
+            <button
+              onClick={handleCancel}
+              className="flex-1 py-2 rounded-xl text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
+            >
               Cancel
             </button>
-            <button onClick={handleConfirm}
-              className="flex-1 py-2 rounded-xl text-xs font-bold bg-[#0077b6] text-white hover:bg-[#005f90] transition-all shadow-[0_3px_10px_rgba(0,119,182,0.3)]">
+            <button
+              onClick={handleConfirm}
+              className="flex-1 py-2 rounded-xl text-xs font-bold bg-[#0077b6] text-white hover:bg-[#005f90] transition-all shadow-[0_3px_10px_rgba(0,119,182,0.3)]"
+            >
               Save as Default
             </button>
           </div>
@@ -166,10 +183,10 @@ function LocationButton() {
   }
 
   const states = {
-    idle: { label: null, icon: <PinIcon />, cls: "border-slate-200 text-slate-600 hover:border-[#0077b6] hover:text-[#0077b6] hover:bg-[#caf0f8]" },
-    detecting: { label: "Detecting…", icon: <SpinnerIcon />, cls: "border-[#0077b6]/40 text-[#0077b6] bg-[#caf0f8] cursor-wait" },
-    done: { label: "Saved ✓", icon: <CheckIcon />, cls: "border-emerald-300 text-emerald-600 bg-emerald-50" },
-    error: { label: errMsg, icon: <PinIcon color="text-red-400" />, cls: "border-red-200 text-red-500 bg-red-50 max-w-[140px]" },
+    idle:      { label: null,         icon: <PinIcon />,                         cls: "border-slate-200 text-slate-600 hover:border-[#0077b6] hover:text-[#0077b6] hover:bg-[#caf0f8]" },
+    detecting: { label: "Detecting…", icon: <SpinnerIcon />,                     cls: "border-[#0077b6]/40 text-[#0077b6] bg-[#caf0f8] cursor-wait" },
+    done:      { label: "Saved ✓",    icon: <CheckIcon />,                       cls: "border-emerald-300 text-emerald-600 bg-emerald-50" },
+    error:     { label: errMsg,       icon: <PinIcon color="text-red-400" />,    cls: "border-red-200 text-red-500 bg-red-50 max-w-[140px]" },
   };
 
   const s = states[phase] ?? states.idle;
@@ -189,7 +206,6 @@ function LocationButton() {
   );
 }
 
-// ─── Icon button reusable ─────────────────────────────────────────────────────
 function IconBtn({ onClick, active, activeClass, inactiveClass, children, title }) {
   return (
     <button
@@ -211,21 +227,12 @@ export default function NavBar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isProductDetail = location.pathname.startsWith("/product/");
-  const filterRoutes = [
-  "/phones",
-  "/laptops",
-  "/tablets",
-  "/smartwatches",
-  "/televisions"
-];
-
-const isFilterPage = filterRoutes.some(route =>
-  location.pathname.startsWith(route)
-);
+  const filterRoutes = ["/phones", "/laptops", "/tablets", "/smartwatches", "/televisions"];
+  const isFilterPage = filterRoutes.some(route => location.pathname.startsWith(route));
 
   useEffect(() => {
-  setMobileMenuOpen(false);
-}, [location.pathname]);
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const onLogout = async () => {
     try {
@@ -239,15 +246,22 @@ const isFilterPage = filterRoutes.some(route =>
     }
   };
 
-  const isAdmin = isAuthenticated && user?.role === "admin";
+  const isAdmin  = isAuthenticated && user?.role === "admin";
   const isSeller = isAuthenticated && user?.role === "seller";
   const isPremium =
     isSeller &&
     subscription?.plan?.toLowerCase() === "premium" &&
-    subscription?.status === "active" || (isSeller && user?.isSuperSeller === true);
-  const hasDefaultAddress = !!user?.defaultAddress?.city;
+    subscription?.status === "active" ||
+    (isSeller && user?.isSuperSeller === true);
 
-  // Show shop icons on these paths
+  // ✅ FIX: Check both defaultAddress city AND location.coordinates so the button
+  //         hides correctly after either save-as-address or GPS coordinate save
+  const hasDefaultAddress = !!(
+    user?.defaultAddress?.city ||
+    (user?.location?.coordinates &&
+      (user.location.coordinates[0] !== 0 || user.location.coordinates[1] !== 0))
+  );
+
   const shopPaths = ["/wishlist", "/cart"];
   const isOnProductPage = location.pathname.startsWith("/product/");
   const showShopIcons =
@@ -256,7 +270,7 @@ const isFilterPage = filterRoutes.some(route =>
     (isOnProductPage || shopPaths.includes(location.pathname));
 
   const isWishlist = location.pathname === "/wishlist";
-  const isCart = location.pathname === "/cart";
+  const isCart     = location.pathname === "/cart";
 
   return (
     <div className="sticky top-0 z-50">
@@ -281,12 +295,15 @@ const isFilterPage = filterRoutes.some(route =>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z" />
               </svg>
-              <input type="text" placeholder="Search for mobiles, accessories & More"
-                className="w-full bg-transparent focus:outline-none text-gray-700 text-sm" />
+              <input
+                type="text"
+                placeholder="Search for mobiles, accessories & More"
+                className="w-full bg-transparent focus:outline-none text-gray-700 text-sm"
+              />
             </div>
           )}
 
-          {/* ── RIGHT SIDE ── */}
+          {/* RIGHT SIDE */}
           <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
 
             {/* MOBILE: wishlist + cart icons (always visible when authenticated & not admin) */}
@@ -368,44 +385,54 @@ const isFilterPage = filterRoutes.some(route =>
                     )}
                   </span>
                   {isAdmin && (
-                    <button onClick={() => navigate("/admin-dashboard")}
-                      className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 lg:px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium text-sm">
+                    <button
+                      onClick={() => navigate("/admin-dashboard")}
+                      className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 lg:px-4 py-2 rounded-lg hover:bg-indigo-700 transition font-medium text-sm"
+                    >
                       <MdAdminPanelSettings className="text-lg" />
                       <span className="hidden lg:inline">Admin Panel</span>
                     </button>
                   )}
                   {!isAdmin && (
-                    <button onClick={() => navigate(isSeller ? "/seller-dashboard" : "/profile")}
-                      className="bg-[#0077b6] text-white px-3 lg:px-4 py-2 rounded-lg hover:bg-[#03045e] transition text-sm">
+                    <button
+                      onClick={() => navigate(isSeller ? "/seller-dashboard" : "/profile")}
+                      className="bg-[#0077b6] text-white px-3 lg:px-4 py-2 rounded-lg hover:bg-[#03045e] transition text-sm"
+                    >
                       {isSeller ? "Dashboard" : "Profile"}
                     </button>
                   )}
-                  <button onClick={onLogout} disabled={loggingOut}
-                    className="bg-red-600 text-white px-3 lg:px-4 py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50 text-sm">
+                  <button
+                    onClick={onLogout}
+                    disabled={loggingOut}
+                    className="bg-red-600 text-white px-3 lg:px-4 py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50 text-sm"
+                  >
                     {loggingOut ? "..." : "Logout"}
                   </button>
                 </div>
               </div>
             ) : (
-              <button onClick={() => navigate("/login")}
-                className="hidden md:block bg-[#0077b6] text-white px-4 py-2 rounded-lg hover:bg-[#03045e] transition text-sm">
+              <button
+                onClick={() => navigate("/login")}
+                className="hidden md:block bg-[#0077b6] text-white px-4 py-2 rounded-lg hover:bg-[#03045e] transition text-sm"
+              >
                 Login
               </button>
             )}
 
             {/* Hamburger — mobile only */}
-            
-            {!isProductDetail && (<button
-              className="md:hidden text-gray-700 p-1.5 flex-shrink-0 rounded-lg hover:bg-gray-100 transition-colors"
-              onClick={() => setMobileMenuOpen(v => !v)}
-              aria-label="Toggle menu"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {mobileMenuOpen
-                  ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
-              </svg>
-            </button>)}
+            {!isProductDetail && (
+              <button
+                className="md:hidden text-gray-700 p-1.5 flex-shrink-0 rounded-lg hover:bg-gray-100 transition-colors"
+                onClick={() => setMobileMenuOpen(v => !v)}
+                aria-label="Toggle menu"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  {mobileMenuOpen
+                    ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 
@@ -417,23 +444,28 @@ const isFilterPage = filterRoutes.some(route =>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z" />
             </svg>
-            <input type="text" placeholder="Search mobiles, accessories & more"
-              className="w-full bg-transparent focus:outline-none text-gray-700 text-sm" />
+            <input
+              type="text"
+              placeholder="Search mobiles, accessories & more"
+              className="w-full bg-transparent focus:outline-none text-gray-700 text-sm"
+            />
           </div>
         )}
       </nav>
 
-      {!isProductDetail  && !isFilterPage && <NavMenu
-        mobileOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-        user={user}
-        isAuthenticated={isAuthenticated}
-        isAdmin={isAdmin}
-        isSeller={isSeller}
-        onLogout={onLogout}
-        loggingOut={loggingOut}
-        isPremium={isPremium}
-      />}
+      {!isProductDetail && !isFilterPage && (
+        <NavMenu
+          mobileOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+          user={user}
+          isAuthenticated={isAuthenticated}
+          isAdmin={isAdmin}
+          isSeller={isSeller}
+          onLogout={onLogout}
+          loggingOut={loggingOut}
+          isPremium={isPremium}
+        />
+      )}
     </div>
   );
 }

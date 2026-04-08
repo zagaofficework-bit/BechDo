@@ -16,19 +16,19 @@ import { useSellFlow } from "../../../context/sellflow.context";
 
 // Brand logo map — add more as needed
 const BRAND_LOGOS = {
-  Apple:   "./assets/devicesicons/Apple.png",
-  Samsung: "./assets/devicesicons/samsung.png",
-  Xiaomi:  "./assets/devicesicons/Xiaomi.png",
-  Vivo:    "./assets/devicesicons/Vivo.png",
-  Oppo:    "./assets/devicesicons/Oppo.png",
-  OnePlus: "./assets/devicesicons/OnePlus.png",
-  Realme:  "./assets/devicesicons/realme-seeklogo.png",
-  Poco:    "./assets/devicesicons/Poco.png",
-  Google:  "./assets/devicesicons/Google.png",
-  Motorola:  "./assets/devicesicons/Motorola.png",
-  Nokia:     "./assets/devicesicons/Nokia.png",
-  Sony:      "./assets/devicesicons/Sony.png",
-  Nothing :  "./assets/devicesicons/Nothing.webp",
+  Apple:   "../../../../assets/devicesicons/Apple.png",
+  Samsung: "../../../../assets/devicesicons/samsung.png",
+  Xiaomi:  "../../../../assets/devicesicons/Xiaomi.png",
+  Vivo:    "../../../../assets/devicesicons/Vivo.png",
+  Oppo:    "../../../../assets/devicesicons/Oppo.png",
+  OnePlus: "../../../../assets/devicesicons/OnePlus.png",
+  Realme:  "../../../../assets/devicesicons/realme-seeklogo.png",
+  Poco:    "../../../../assets/devicesicons/Poco.png",
+  Google:  "../../../../assets/devicesicons/Google.png",
+  Motorola:  "../../../../assets/devicesicons/Motorola.png",
+  Nokia:     "../../../../assets/devicesicons/Nokia.png",
+  Sony:      "../../../../assets/devicesicons/Sony.png",
+  Nothing :  "../../../../assets/devicesicons/Nothing.webp",
 };
 
 const CATEGORY = "mobile"; // change to "laptop" | "tablet" etc. per page
