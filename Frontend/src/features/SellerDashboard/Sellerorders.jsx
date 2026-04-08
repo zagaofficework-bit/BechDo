@@ -3,7 +3,7 @@ import { memo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 // NOTE: Fix the import casing — file is useBuySell.js not useBuysell.js
-import { useSellerPendingOrders, useOrderActions, useMyOrders } from "../../hooks/useBuySell";
+import { useSellerPendingOrders, useOrderActions, useMyOrders } from "../../hooks/useBuysell";
 
 // ─── Order status display config ──────────────────────────────────────────────
 const STATUS_CONFIG = {
