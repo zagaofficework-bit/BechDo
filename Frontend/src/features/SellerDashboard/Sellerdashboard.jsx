@@ -4,7 +4,7 @@ import { io as socketIO } from "socket.io-client";
 
 import { useProductContext } from "../../context/product.context";
 import { useAuth } from "../../hooks/useAuth";
-import { useSellerPendingOrders } from "../../hooks/useBuySell";
+import { useSellerPendingOrders } from "../../hooks/useBuysell";
 import { useSubscriptionContext } from "../../context/subscription.context";
 import BackButton from "../common/BackButton";
 
