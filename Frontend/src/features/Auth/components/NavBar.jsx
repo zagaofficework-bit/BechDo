@@ -16,13 +16,18 @@ function getCurrentLocation() {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (position) => resolve({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy,
-      }),
+      (position) =>
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        }),
       (error) => {
-        const messages = { 1: "Location permission denied", 2: "Location unavailable", 3: "Location request timed out" };
+        const messages = {
+          1: "Location permission denied",
+          2: "Location unavailable",
+          3: "Location request timed out",
+        };
         reject(new Error(messages[error.code] || "Unknown location error"));
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -42,7 +47,6 @@ async function reverseGeocode(latitude, longitude) {
 }
 
 async function saveDetectedAddress(latitude, longitude, geocoded) {
-  // ✅ FIX: Check token BEFORE the fetch so unauthenticated users get a clear error immediately
   const token = localStorage.getItem("accessToken");
   if (!token) throw new Error("User not authenticated");
 
@@ -72,23 +76,111 @@ async function saveDetectedAddress(latitude, longitude, geocoded) {
 
 function PinIcon({ color = "text-slate-500" }) {
   return (
-    <svg className={`w-4 h-4 flex-shrink-0 ${color}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round"
-        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    <svg
+      className={`w-4 h-4 flex-shrink-0 ${color}`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      strokeWidth={2}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"
+      />
     </svg>
   );
 }
 function SpinnerIcon() {
-  return <span className="w-4 h-4 flex-shrink-0 border-2 border-current/30 border-t-current rounded-full animate-spin" />;
+  return (
+    <span className="w-4 h-4 flex-shrink-0 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+  );
 }
 function CheckIcon() {
   return (
-    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+    <svg
+      className="w-4 h-4 flex-shrink-0"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      strokeWidth={2.5}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   );
 }
 
+// ─── Shared LocationConfirmPopup ──────────────────────────────────────────────
+// Reusable confirm popup used by both desktop LocationButton and mobile drawer
+export function LocationConfirmPopup({ preview, onConfirm, onCancel, saving }) {
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+        onClick={onCancel}
+      />
+      <div
+        className="fixed top-16 right-2 sm:right-4 z-50 bg-white rounded-2xl shadow-2xl border border-slate-100 w-[calc(100vw-16px)] sm:w-80 p-5"
+        style={{ animation: "fadeDown 0.2s ease" }}
+      >
+        <style>{`@keyframes fadeDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-9 h-9 rounded-xl bg-[#0077b6]/10 flex items-center justify-center flex-shrink-0 text-[#0077b6]">
+            <PinIcon color="text-[#0077b6]" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-slate-800">
+              Save this location?
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5 leading-relaxed break-words">
+              {preview.full}
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5 text-xs mb-4">
+          {[
+            { label: "Street", value: preview.street },
+            { label: "City", value: preview.city },
+            { label: "State", value: preview.state },
+            { label: "Pincode", value: preview.pincode },
+          ].map((item) => (
+            <div key={item.label} className="bg-slate-50 rounded-lg px-2.5 py-2">
+              <p className="text-slate-400 font-medium">{item.label}</p>
+              <p className="text-slate-700 font-semibold truncate">
+                {item.value ?? "—"}
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={onCancel}
+            disabled={saving}
+            className="flex-1 py-2 rounded-xl text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={saving}
+            className="flex-1 py-2 rounded-xl text-xs font-bold bg-[#0077b6] text-white hover:bg-[#005f90] transition-all shadow-[0_3px_10px_rgba(0,119,182,0.3)] disabled:opacity-60 flex items-center justify-center gap-1.5"
+          >
+            {saving ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                Saving…
+              </>
+            ) : (
+              "Save as Default"
+            )}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── Desktop LocationButton (unchanged behavior) ──────────────────────────────
 function LocationButton() {
   const [phase, setPhase] = useState("idle");
   const [preview, setPreview] = useState(null);
@@ -115,78 +207,66 @@ function LocationButton() {
     try {
       await saveDetectedAddress(coords.latitude, coords.longitude, preview);
       setPhase("done");
-      setTimeout(() => { setPhase("idle"); setPreview(null); setCoords(null); }, 2500);
+      setTimeout(() => {
+        setPhase("idle");
+        setPreview(null);
+        setCoords(null);
+      }, 2500);
     } catch (e) {
       setErrMsg(e.message);
       setPhase("error");
     }
   };
 
-  const handleCancel = () => { setPhase("idle"); setPreview(null); setCoords(null); };
+  const handleCancel = () => {
+    setPhase("idle");
+    setPreview(null);
+    setCoords(null);
+  };
 
   if (phase === "confirming" && preview) {
     return (
-      <>
-        <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={handleCancel} />
-        <div
-          className="fixed top-16 right-2 sm:right-4 z-50 bg-white rounded-2xl shadow-2xl border border-slate-100 w-[calc(100vw-16px)] sm:w-80 p-5"
-          style={{ animation: "fadeDown 0.2s ease" }}
-        >
-          <style>{`@keyframes fadeDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`}</style>
-          <div className="flex items-start gap-3 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-[#0077b6]/10 flex items-center justify-center flex-shrink-0 text-[#0077b6]">
-              <PinIcon color="text-[#0077b6]" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-slate-800">Save this location?</p>
-              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed break-words">{preview.full}</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-1.5 text-xs mb-4">
-            {[
-              { label: "Street",  value: preview.street  },
-              { label: "City",    value: preview.city    },
-              { label: "State",   value: preview.state   },
-              { label: "Pincode", value: preview.pincode },
-            ].map(item => (
-              <div key={item.label} className="bg-slate-50 rounded-lg px-2.5 py-2">
-                <p className="text-slate-400 font-medium">{item.label}</p>
-                <p className="text-slate-700 font-semibold truncate">{item.value ?? "—"}</p>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleCancel}
-              className="flex-1 py-2 rounded-xl text-xs font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConfirm}
-              className="flex-1 py-2 rounded-xl text-xs font-bold bg-[#0077b6] text-white hover:bg-[#005f90] transition-all shadow-[0_3px_10px_rgba(0,119,182,0.3)]"
-            >
-              Save as Default
-            </button>
-          </div>
-        </div>
-      </>
+      <LocationConfirmPopup
+        preview={preview}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        saving={false}
+      />
     );
   }
 
   if (phase === "saving") {
     return (
-      <button disabled className="flex items-center gap-1.5 border border-[#0077b6]/40 text-[#0077b6] bg-[#caf0f8] rounded-lg px-2.5 py-1.5 text-xs font-medium cursor-wait">
+      <button
+        disabled
+        className="flex items-center gap-1.5 border border-[#0077b6]/40 text-[#0077b6] bg-[#caf0f8] rounded-lg px-2.5 py-1.5 text-xs font-medium cursor-wait"
+      >
         <SpinnerIcon /> Saving…
       </button>
     );
   }
 
   const states = {
-    idle:      { label: null,         icon: <PinIcon />,                         cls: "border-slate-200 text-slate-600 hover:border-[#0077b6] hover:text-[#0077b6] hover:bg-[#caf0f8]" },
-    detecting: { label: "Detecting…", icon: <SpinnerIcon />,                     cls: "border-[#0077b6]/40 text-[#0077b6] bg-[#caf0f8] cursor-wait" },
-    done:      { label: "Saved ✓",    icon: <CheckIcon />,                       cls: "border-emerald-300 text-emerald-600 bg-emerald-50" },
-    error:     { label: errMsg,       icon: <PinIcon color="text-red-400" />,    cls: "border-red-200 text-red-500 bg-red-50 max-w-[140px]" },
+    idle: {
+      label: null,
+      icon: <PinIcon />,
+      cls: "border-slate-200 text-slate-600 hover:border-[#0077b6] hover:text-[#0077b6] hover:bg-[#caf0f8]",
+    },
+    detecting: {
+      label: "Detecting…",
+      icon: <SpinnerIcon />,
+      cls: "border-[#0077b6]/40 text-[#0077b6] bg-[#caf0f8] cursor-wait",
+    },
+    done: {
+      label: "Saved",
+      icon: <CheckIcon />,
+      cls: "border-emerald-300 text-emerald-600 bg-emerald-50",
+    },
+    error: {
+      label: errMsg,
+      icon: <PinIcon color="text-red-400" />,
+      cls: "border-red-200 text-red-500 bg-red-50 max-w-[140px]",
+    },
   };
 
   const s = states[phase] ?? states.idle;
@@ -206,12 +286,131 @@ function LocationButton() {
   );
 }
 
+// ─── Mobile LocationButton (compact icon-only, with same popup flow) ──────────
+export function MobileLocationButton() {
+  const [phase, setPhase] = useState("idle");
+  const [preview, setPreview] = useState(null);
+  const [coords, setCoords] = useState(null);
+  const [errMsg, setErrMsg] = useState("");
+
+  const handleDetect = async () => {
+    setPhase("detecting");
+    setErrMsg("");
+    try {
+      const { latitude, longitude } = await getCurrentLocation();
+      setCoords({ latitude, longitude });
+      const address = await reverseGeocode(latitude, longitude);
+      setPreview(address);
+      setPhase("confirming");
+    } catch (e) {
+      setErrMsg(e.message);
+      setPhase("error");
+    }
+  };
+
+  const handleConfirm = async () => {
+    setPhase("saving");
+    try {
+      await saveDetectedAddress(coords.latitude, coords.longitude, preview);
+      setPhase("done");
+      setTimeout(() => {
+        setPhase("idle");
+        setPreview(null);
+        setCoords(null);
+      }, 2500);
+    } catch (e) {
+      setErrMsg(e.message);
+      setPhase("error");
+    }
+  };
+
+  const handleCancel = () => {
+    setPhase("idle");
+    setPreview(null);
+    setCoords(null);
+  };
+
+  if (phase === "confirming" && preview) {
+    return (
+      <LocationConfirmPopup
+        preview={preview}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+        saving={false}
+      />
+    );
+  }
+
+  const iconColor =
+    phase === "detecting"
+      ? "text-[#0077b6]"
+      : phase === "done"
+      ? "text-emerald-500"
+      : phase === "error"
+      ? "text-red-400"
+      : "text-slate-500";
+
+  const borderColor =
+    phase === "detecting"
+      ? "border-[#0077b6]/40 bg-[#caf0f8]"
+      : phase === "done"
+      ? "border-emerald-300 bg-emerald-50"
+      : phase === "error"
+      ? "border-red-200 bg-red-50"
+      : "border-slate-200 hover:border-[#0077b6] hover:bg-[#caf0f8]";
+
+  return (
+    <button
+      onClick={phase === "idle" || phase === "error" ? handleDetect : undefined}
+      disabled={phase === "detecting" || phase === "done"}
+      title={
+        phase === "idle"
+          ? "Detect my location"
+          : phase === "error"
+          ? errMsg
+          : undefined
+      }
+      className={`relative p-2 rounded-xl border transition-all duration-150 disabled:cursor-default ${borderColor} ${iconColor}`}
+    >
+      {phase === "detecting" ? (
+        <span className="w-4 h-4 sm:w-5 sm:h-5 block border-2 border-current/30 border-t-current rounded-full animate-spin" />
+      ) : phase === "done" ? (
+        <svg
+          className="w-4 h-4 sm:w-5 sm:h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          strokeWidth={2.5}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <svg
+          className="w-4 h-4 sm:w-5 sm:h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"
+          />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 function IconBtn({ onClick, active, activeClass, inactiveClass, children, title }) {
   return (
     <button
       onClick={onClick}
       title={title}
-      className={`relative p-2 rounded-xl border transition-all duration-150 ${active ? activeClass : inactiveClass}`}
+      className={`relative p-2 rounded-xl border transition-all duration-150 ${
+        active ? activeClass : inactiveClass
+      }`}
     >
       {children}
     </button>
@@ -227,8 +426,16 @@ export default function NavBar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isProductDetail = location.pathname.startsWith("/product/");
-  const filterRoutes = ["/phones", "/laptops", "/tablets", "/smartwatches", "/televisions"];
-  const isFilterPage = filterRoutes.some(route => location.pathname.startsWith(route));
+  const filterRoutes = [
+    "/phones",
+    "/laptops",
+    "/tablets",
+    "/smartwatches",
+    "/televisions",
+  ];
+  const isFilterPage = filterRoutes.some((route) =>
+    location.pathname.startsWith(route)
+  );
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -246,16 +453,14 @@ export default function NavBar() {
     }
   };
 
-  const isAdmin  = isAuthenticated && user?.role === "admin";
+  const isAdmin = isAuthenticated && user?.role === "admin";
   const isSeller = isAuthenticated && user?.role === "seller";
   const isPremium =
-    isSeller &&
-    subscription?.plan?.toLowerCase() === "premium" &&
-    subscription?.status === "active" ||
+    (isSeller &&
+      subscription?.plan?.toLowerCase() === "premium" &&
+      subscription?.status === "active") ||
     (isSeller && user?.isSuperSeller === true);
 
-  // ✅ FIX: Check both defaultAddress city AND location.coordinates so the button
-  //         hides correctly after either save-as-address or GPS coordinate save
   const hasDefaultAddress = !!(
     user?.defaultAddress?.city ||
     (user?.location?.coordinates &&
@@ -270,7 +475,7 @@ export default function NavBar() {
     (isOnProductPage || shopPaths.includes(location.pathname));
 
   const isWishlist = location.pathname === "/wishlist";
-  const isCart     = location.pathname === "/cart";
+  const isCart = location.pathname === "/cart";
 
   return (
     <div className="sticky top-0 z-50">
@@ -290,10 +495,19 @@ export default function NavBar() {
           {/* Search bar — desktop only, hidden for admins */}
           {!isAdmin && !isFilterPage && (
             <div className="hidden md:flex flex-1 mx-4 lg:mx-6 items-center border rounded-lg px-3 py-2 bg-gray-50">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0"
-                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
+                />
               </svg>
               <input
                 type="text"
@@ -306,9 +520,13 @@ export default function NavBar() {
           {/* RIGHT SIDE */}
           <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
 
-            {/* MOBILE: wishlist + cart icons (always visible when authenticated & not admin) */}
+            {/* ── MOBILE: right-side action icons ── */}
             {isAuthenticated && !isAdmin && (
               <div className="flex items-center gap-1 md:hidden">
+                {/* Location button — mobile (shown only if no default address) */}
+                {!hasDefaultAddress && <MobileLocationButton />}
+
+                {/* Wishlist */}
                 <IconBtn
                   onClick={() => navigate("/wishlist")}
                   title="Wishlist"
@@ -316,12 +534,22 @@ export default function NavBar() {
                   activeClass="border-red-300 bg-red-50 text-red-500"
                   inactiveClass="border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-500 hover:bg-red-50"
                 >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill={isWishlist ? "currentColor" : "none"}
-                    stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                    <path strokeLinecap="round" strokeLinejoin="round"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  <svg
+                    className="w-4 h-4 sm:w-5 sm:h-5"
+                    fill={isWishlist ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.8}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
                   </svg>
                 </IconBtn>
+
+                {/* Cart */}
                 <IconBtn
                   onClick={() => navigate("/cart")}
                   title="Cart"
@@ -329,19 +557,32 @@ export default function NavBar() {
                   activeClass="border-[#0077b6] bg-[#caf0f8] text-[#0077b6]"
                   inactiveClass="border-slate-200 text-slate-500 hover:border-[#0077b6] hover:text-[#0077b6] hover:bg-[#caf0f8]"
                 >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                    <path strokeLinecap="round" strokeLinejoin="round"
-                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  <svg
+                    className="w-4 h-4 sm:w-5 sm:h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.8}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
                   </svg>
                 </IconBtn>
               </div>
             )}
 
-            {/* DESKTOP right actions */}
+            {/* ── DESKTOP right actions ── */}
             {isAuthenticated ? (
               <div className="hidden md:flex items-center space-x-2 lg:space-x-3">
                 {!isAdmin && !isPremium && (
-                  <div onClick={() => navigate("/subscribe")} className="cursor-pointer" title="Subscription plans">
+                  <div
+                    onClick={() => navigate("/subscribe")}
+                    className="cursor-pointer"
+                    title="Subscription plans"
+                  >
                     <PiCrown className="text-3xl lg:text-4xl text-[#0077b6]" />
                   </div>
                 )}
@@ -355,10 +596,18 @@ export default function NavBar() {
                       activeClass="border-red-300 bg-red-50 text-red-500"
                       inactiveClass="border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-500 hover:bg-red-50"
                     >
-                      <svg className="w-5 h-5" fill={isWishlist ? "currentColor" : "none"}
-                        stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                        <path strokeLinecap="round" strokeLinejoin="round"
-                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      <svg
+                        className="w-5 h-5"
+                        fill={isWishlist ? "currentColor" : "none"}
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.8}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        />
                       </svg>
                     </IconBtn>
                     <IconBtn
@@ -368,9 +617,18 @@ export default function NavBar() {
                       activeClass="border-[#0077b6] bg-[#caf0f8] text-[#0077b6]"
                       inactiveClass="border-slate-200 text-slate-500 hover:border-[#0077b6] hover:text-[#0077b6] hover:bg-[#caf0f8]"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-                        <path strokeLinecap="round" strokeLinejoin="round"
-                          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.8}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
                       </svg>
                     </IconBtn>
                   </>
@@ -395,7 +653,9 @@ export default function NavBar() {
                   )}
                   {!isAdmin && (
                     <button
-                      onClick={() => navigate(isSeller ? "/seller-dashboard" : "/profile")}
+                      onClick={() =>
+                        navigate(isSeller ? "/seller-dashboard" : "/profile")
+                      }
                       className="bg-[#0077b6] text-white px-3 lg:px-4 py-2 rounded-lg hover:bg-[#03045e] transition text-sm"
                     >
                       {isSeller ? "Dashboard" : "Profile"}
@@ -423,13 +683,31 @@ export default function NavBar() {
             {!isProductDetail && (
               <button
                 className="md:hidden text-gray-700 p-1.5 flex-shrink-0 rounded-lg hover:bg-gray-100 transition-colors"
-                onClick={() => setMobileMenuOpen(v => !v)}
+                onClick={() => setMobileMenuOpen((v) => !v)}
                 aria-label="Toggle menu"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  {mobileMenuOpen
-                    ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 sm:h-6 sm:w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  {mobileMenuOpen ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  )}
                 </svg>
               </button>
             )}
@@ -439,10 +717,19 @@ export default function NavBar() {
         {/* Mobile search bar */}
         {!isAdmin && !isFilterPage && (
           <div className="mt-2.5 md:hidden flex items-center border rounded-lg px-3 py-2 bg-gray-50">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 mr-2 flex-shrink-0"
-              fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 text-gray-500 mr-2 flex-shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"
+              />
             </svg>
             <input
               type="text"
@@ -464,6 +751,7 @@ export default function NavBar() {
           onLogout={onLogout}
           loggingOut={loggingOut}
           isPremium={isPremium}
+          hasDefaultAddress={hasDefaultAddress}
         />
       )}
     </div>
