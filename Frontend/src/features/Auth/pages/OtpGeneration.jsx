@@ -13,8 +13,9 @@ export default function OtpGeneration() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const email = location.state?.email || "";
+  const phone = location.state?.phone || "";
   const otpTarget = location.state?.otpTarget || "login";
+  const registrationData = location.state?.registrationData || null;
 
   const {
     user,
@@ -23,6 +24,7 @@ export default function OtpGeneration() {
     handleVerifyLoginOtp,
     handleVerifyRegisterOtp,
     handleLogin,
+    handleRegister,
     error: authError,
     clearError,
   } = useAuth();
@@ -33,7 +35,7 @@ export default function OtpGeneration() {
     return <Navigate to="/" replace />;
   }
 
-  if (!initializing && !email) return <Navigate to="/login" replace />;
+  if (!initializing && !phone) return <Navigate to="/login" replace />;
   if (initializing) return <FullScreenSpinner />;
 
   const handleChange = (value, index) => {
@@ -64,10 +66,14 @@ export default function OtpGeneration() {
 
     let res;
 
+    // AFTER
     if (otpTarget === "login") {
       res = await handleVerifyLoginOtp({ otp: otpValue });
     } else {
-      res = await handleVerifyRegisterOtp({ otp: otpValue });
+      res = await handleVerifyRegisterOtp({
+        otp: otpValue,
+        ...registrationData, // firstname, lastname, email
+      });
     }
 
     setSubmitting(false);
@@ -95,7 +101,11 @@ export default function OtpGeneration() {
     clearError();
 
     setResending(true);
-    await handleLogin({ email });
+    if (otpTarget === "login") {
+      await handleLogin({ phone });
+    } else {
+      await handleRegister({ phone });
+    }
     setResending(false);
 
     setTimer(60); // 🔁 restart cooldown
@@ -269,7 +279,7 @@ export default function OtpGeneration() {
             <div className="flex items-center gap-1.5 flex-wrap mt-1">
               <p className="text-sm text-gray-400">
                 Code sent to{" "}
-                <span className="font-semibold text-gray-700">{email}</span>
+                <span className="font-semibold text-gray-700">{phone}</span>
               </p>
               <span
                 className="cursor-pointer text-sm"
@@ -473,6 +483,7 @@ export default function OtpGeneration() {
               </>
             )}
           </p>
+          <div id="recaptcha-container" />
         </div>
       </div>
     </div>

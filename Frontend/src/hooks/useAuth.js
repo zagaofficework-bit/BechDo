@@ -1,13 +1,8 @@
 import { useState } from "react";
 import { useAuthContext } from "../context/auth.context";
-import {
-  login,
-  verifyLoginOtp,
-  verifyRegisterOtp,
-  register,
-  logout,
-  googleAuth,
-} from "../services/auth.api";
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import { auth } from "../config/firebase.config";
+import { login, register, logout, googleAuth } from "../services/auth.api";
 
 export const useAuth = () => {
   const {
@@ -25,114 +20,77 @@ export const useAuth = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
-  ////////////////////////////////////////////////////////////////////
-  //// SESSION TOKEN — survives navigation between Login → OTP page
-  ////////////////////////////////////////////////////////////////////
-
-  const saveSessionToken = (t) => sessionStorage.setItem("sessionToken", t);
-  const getSessionToken = () => sessionStorage.getItem("sessionToken");
   const clearSessionToken = () => sessionStorage.removeItem("sessionToken");
 
-  ////////////////////////////////////////////////////////////////////
-  //// REGISTER
-  ////////////////////////////////////////////////////////////////////
+  // AFTER
 
-  const handleRegister = async ({ email, firstname, lastname, mobile }) => {
+  const setupRecaptcha = (containerId) => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+        size: "invisible",
+      });
+    }
+  };
+
+  // ── Send OTP via Firebase ────────────────────────────────────────────────
+  const sendOtp = async (phone) => {
     setError(null);
     setLoading(true);
-    if (!email || !firstname || !lastname || !mobile) {
-      setError("All fields are required");
-      setLoading(false);
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Invalid email address");
-      setLoading(false);
-      return;
-    }
-    if (!/^\d{10}$/.test(mobile)) {
-      setError("Mobile number must be 10 digits");
-      setLoading(false);
-      return;
-    }
     try {
-      const data = await register({ email, firstname, lastname, mobile });
-      saveSessionToken(data.sessionToken);
-      setOtpSent(true);
-      setOtpTarget("register");
-      setSuccessMessage(data.message || "OTP sent to your email");
+      setupRecaptcha("recaptcha-container");
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        phone, // must be E.164 e.g. "+919876543210"
+        window.recaptchaVerifier,
+      );
+      window.confirmationResult = confirmation;
       return { success: true };
     } catch (err) {
-      setError(
-        err?.response?.data?.message || "Registration failed. Please try again"
-      );
+      // Reset recaptcha on error so user can retry
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
+      }
+      setError(err?.message || "Failed to send OTP");
       return { success: false };
     } finally {
       setLoading(false);
     }
   };
 
-  ////////////////////////////////////////////////////////////////////
-  //// VERIFY REGISTER OTP
-  ////////////////////////////////////////////////////////////////////
+  // ── REGISTER ─────────────────────────────────────────────────────────────
+  const handleRegister = async ({ phone }) => {
+    return sendOtp(phone);
+  };
 
-  const handleVerifyRegisterOtp = async ({ otp }) => {
+  const handleVerifyRegisterOtp = async ({
+    otp,
+    firstname,
+    lastname,
+    email,
+  }) => {
     setError(null);
     setLoading(true);
-    if (!otp || otp.length < 4) {
-      setError("Please enter a valid OTP");
-      setLoading(false);
-      return { success: false };
-    }
     try {
-      const sessionToken = getSessionToken();
-      if (!sessionToken) {
-        setError("Session expired. Please register again");
+      if (!window.confirmationResult) {
+        setError("Session expired. Please resend OTP");
         return { success: false };
       }
+      const result = await window.confirmationResult.confirm(otp);
+      const firebaseToken = await result.user.getIdToken();
 
-      const data = await verifyRegisterOtp({ otp, sessionToken });
+      const data = await register({
+        firebaseToken,
+        firstname,
+        lastname,
+        email,
+      });
       localStorage.setItem("accessToken", data.accessToken);
       setUser(data.user);
-      clearSessionToken();
-      setOtpSent(false);
-      setSuccessMessage("Registered successfully!");
-      return { success: true };
-    } catch (err) {
-      setError(err?.response?.data?.message || "Invalid or expired OTP");
-      return { success: false };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  ////////////////////////////////////////////////////////////////////
-  //// LOGIN
-  ////////////////////////////////////////////////////////////////////
-
-  const handleLogin = async ({ email }) => {
-    setError(null);
-    setLoading(true);
-    if (!email) {
-      setError("Email is required");
-      setLoading(false);
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Invalid email address");
-      setLoading(false);
-      return;
-    }
-    try {
-      const data = await login({ email });
-      saveSessionToken(data.sessionToken);
-      setOtpSent(true);
-      setOtpTarget("login");
-      setSuccessMessage(data.message || "OTP sent to your email");
       return { success: true };
     } catch (err) {
       setError(
-        err?.response?.data?.message || "Login failed. Please try again"
+        err?.response?.data?.message || err?.message || "Verification failed",
       );
       return { success: false };
     } finally {
@@ -140,51 +98,37 @@ export const useAuth = () => {
     }
   };
 
-  ////////////////////////////////////////////////////////////////////
-  //// VERIFY LOGIN OTP
-  ////////////////////////////////////////////////////////////////////
+  // ── LOGIN ─────────────────────────────────────────────────────────────────
+  const handleLogin = async ({ phone }) => {
+    return sendOtp(phone);
+  };
 
   const handleVerifyLoginOtp = async ({ otp }) => {
     setError(null);
     setLoading(true);
-    if (!otp || otp.length < 4) {
-      setError("Please enter a valid OTP");
-      setLoading(false);
-      return { success: false };
-    }
-
     try {
-      const sessionToken = getSessionToken();
-      if (!sessionToken) {
-        setError("Session expired. Please login again");
+      if (!window.confirmationResult) {
+        setError("Session expired. Please resend OTP");
         return { success: false };
       }
+      const result = await window.confirmationResult.confirm(otp);
+      const firebaseToken = await result.user.getIdToken();
 
-      const data = await verifyLoginOtp({ otp, sessionToken });
+      const data = await login({ firebaseToken });
       localStorage.setItem("accessToken", data.accessToken);
       setUser(data.user);
-      clearSessionToken();
-      setOtpSent(false);
-      setSuccessMessage("Logged in successfully!");
       return { success: true };
     } catch (err) {
-      setError(err?.response?.data?.message || "Invalid or expired OTP");
+      setError(
+        err?.response?.data?.message || err?.message || "Verification failed",
+      );
       return { success: false };
     } finally {
       setLoading(false);
     }
   };
 
-  ////////////////////////////////////////////////////////////////////
-  //// GOOGLE AUTH (Sign In / Sign Up)
-  ////////////////////////////////////////////////////////////////////
-
-  /**
-   * handleGoogleAuth — called after Google returns an ID token (credential).
-   * Works for both login and signup flows.
-   * @param {string} credential  — Google ID token
-   * @returns {{ success: boolean, isNewUser?: boolean, requiresMobile?: boolean }}
-   */
+  // ── GOOGLE AUTH ───────────────────────────────────────────────────────────
   const handleGoogleAuth = async (credential) => {
     setError(null);
     setLoading(true);
@@ -192,7 +136,6 @@ export const useAuth = () => {
       const data = await googleAuth(credential);
       localStorage.setItem("accessToken", data.accessToken);
       setUser(data.user);
-      setSuccessMessage(data.message || "Signed in with Google!");
       return {
         success: true,
         isNewUser: data.isNewUser ?? false,
@@ -200,66 +143,40 @@ export const useAuth = () => {
         user: data.user,
       };
     } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        "Google sign-in failed. Please try again.";
-      setError(msg);
+      setError(err?.response?.data?.message || "Google sign-in failed");
       return { success: false };
     } finally {
       setLoading(false);
     }
   };
 
-  ////////////////////////////////////////////////////////////////////
-  //// LOGOUT
-  ////////////////////////////////////////////////////////////////////
-
+  // ── LOGOUT ────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
     setError(null);
     setLoading(true);
     try {
       await logout();
     } catch (_) {
-      // logout API failing shouldn't block local cleanup
     } finally {
-      setLoading(false);
       localStorage.removeItem("accessToken");
-      clearSessionToken();
       setUser(null);
-      setOtpSent(false);
+      setLoading(false);
     }
   };
 
-  ////////////////////////////////////////////////////////////////////
-  //// HELPERS
-  ////////////////////////////////////////////////////////////////////
-
   const clearError = () => setError(null);
   const clearMessage = () => setSuccessMessage(null);
-
+  
   return {
-    user,
-    loading,
-    initializing,
-    isAuthenticated,
+    user, loading, initializing, isAuthenticated,
     isAdmin: user?.role === "admin",
     isSeller: user?.role === "seller",
     isUser: user?.role === "user",
-
-    otpSent,
-    otpTarget,
-    error,
-    successMessage,
-
-    handleRegister,
-    handleVerifyRegisterOtp,
-    handleLogin,
-    handleVerifyLoginOtp,
-    handleGoogleAuth,
-    handleLogout,
-
-    updateUser,
-    clearError,
-    clearMessage,
+    error, successMessage,
+    sendOtp,
+    handleRegister, handleVerifyRegisterOtp,
+    handleLogin, handleVerifyLoginOtp,
+    handleGoogleAuth, handleLogout,
+    updateUser, clearError, clearMessage,
   };
 };

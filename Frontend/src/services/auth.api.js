@@ -47,38 +47,18 @@ api.interceptors.response.use(
   }
 );
 
-// Register step 1: send registration details and receive OTP session token
-export async function register({ email, firstname, lastname, mobile }) {
+export async function register({ firebaseToken, firstname, lastname, email }) {
   const response = await api.post("/api/auth/register", {
-    email,
+    firebaseToken,
     firstname,
     lastname,
-    mobile,
+    email,
   });
   return response.data;
 }
 
-// Register OTP verification
-export async function verifyRegisterOtp({ otp, sessionToken }) {
-  const response = await api.post("/api/auth/register/verify-otp", {
-    otp,
-    sessionToken,
-  });
-  return response.data;
-}
-
-// Login step 1: send OTP
-export async function login({ email }) {
-  const response = await api.post("/api/auth/login", { email });
-  return response.data;
-}
-
-// Login OTP verification
-export async function verifyLoginOtp({ otp, sessionToken }) {
-  const response = await api.post("/api/auth/login/verify-otp", {
-    otp,
-    sessionToken,
-  });
+export async function login({ firebaseToken }) {
+  const response = await api.post("/api/auth/login", { firebaseToken });
   return response.data;
 }
 

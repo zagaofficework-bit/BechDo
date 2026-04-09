@@ -26,8 +26,10 @@ export default function Signup() {
   } = useAuth();
 
   if (!initializing && isAuthenticated) {
-    if (user?.role === "admin") return <Navigate to="/admin-dashboard" replace />;
-    if (user?.role === "seller") return <Navigate to="/seller-dashboard" replace />;
+    if (user?.role === "admin")
+      return <Navigate to="/admin-dashboard" replace />;
+    if (user?.role === "seller")
+      return <Navigate to="/seller-dashboard" replace />;
     return <Navigate to="/" replace />;
   }
 
@@ -51,6 +53,7 @@ export default function Signup() {
     return e;
   };
 
+  // AFTER
   const handleSubmit = async () => {
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -58,15 +61,24 @@ export default function Signup() {
       return;
     }
     setSubmitting(true);
-    const result = await handleRegister({
-      firstname: form.firstname,
-      lastname: form.lastname,
-      email: form.email,
-      mobile: form.phone,
-    });
+    const normalized = form.phone.startsWith("+")
+      ? form.phone
+      : `+91${form.phone}`;
+    const result = await handleRegister({ phone: normalized });
     setSubmitting(false);
-    if (result?.success !== false) {
-      navigate("/otp", { state: { email: form.email, otpTarget: "register" } });
+    if (result?.success) {
+      navigate("/otp", {
+        state: {
+          phone: normalized,
+          otpTarget: "register",
+          // Pass registration data so OTP page can complete registration
+          registrationData: {
+            firstname: form.firstname,
+            lastname: form.lastname,
+            email: form.email,
+          },
+        },
+      });
     }
   };
 
@@ -83,7 +95,8 @@ export default function Signup() {
       }
       const role = result.user?.role;
       if (role === "admin") navigate("/admin-dashboard", { replace: true });
-      else if (role === "seller") navigate("/seller-dashboard", { replace: true });
+      else if (role === "seller")
+        navigate("/seller-dashboard", { replace: true });
       else navigate("/", { replace: true });
     }
   };
@@ -100,8 +113,8 @@ export default function Signup() {
       errors[field]
         ? "border-red-300 bg-red-50/50"
         : form[field] && !errors[field]
-        ? "border-teal-400 bg-teal-50/30"
-        : "border-gray-200 bg-gray-50 focus-within:border-teal-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal-50"
+          ? "border-teal-400 bg-teal-50/30"
+          : "border-gray-200 bg-gray-50 focus-within:border-teal-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal-50"
     }`;
 
   return (
@@ -115,17 +128,38 @@ export default function Signup() {
       >
         {/* ── Left panel ── */}
         <div className="hidden md:flex w-1/2 bg-gray-900 flex-col items-center justify-between p-10 relative overflow-hidden">
-          <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full" style={{ background: "rgba(0,119,182,0.1)" }} />
-          <div className="absolute -bottom-20 -right-10 w-72 h-72 rounded-full" style={{ background: "rgba(0,119,182,0.1)" }} />
+          <div
+            className="absolute -top-16 -left-16 w-64 h-64 rounded-full"
+            style={{ background: "rgba(0,119,182,0.1)" }}
+          />
+          <div
+            className="absolute -bottom-20 -right-10 w-72 h-72 rounded-full"
+            style={{ background: "rgba(0,119,182,0.1)" }}
+          />
 
           {/* Logo */}
           <div className="w-full flex items-center gap-2 z-10">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#0077b6" }}>
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "#0077b6" }}
+            >
+              <svg
+                className="w-4 h-4 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
-            <span className="text-white font-bold text-sm tracking-wide">Phonify</span>
+            <span className="text-white font-bold text-sm tracking-wide">
+              Phonify
+            </span>
           </div>
 
           {/* Center text */}
@@ -147,9 +181,14 @@ export default function Signup() {
               { icon: "✅", label: "Phonify Assured Quality" },
               { icon: "🔄", label: "6 Month Warranty" },
             ].map((item) => (
-              <div key={item.label} className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-xl px-3 py-2">
+              <div
+                key={item.label}
+                className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-xl px-3 py-2"
+              >
                 <span className="text-sm">{item.icon}</span>
-                <span className="text-gray-300 text-xs font-medium">{item.label}</span>
+                <span className="text-gray-300 text-xs font-medium">
+                  {item.label}
+                </span>
               </div>
             ))}
           </div>
@@ -159,22 +198,50 @@ export default function Signup() {
         <div className="w-full md:w-1/2 p-8 flex flex-col">
           {/* Top nav */}
           <div className="flex justify-between items-center mb-6">
-            <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
               Back
             </button>
-            <button onClick={() => navigate("/")} className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 transition-colors">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <button
+              onClick={() => navigate("/")}
+              className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 transition-colors"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
 
           {/* Heading */}
           <h2 className="text-2xl font-bold text-gray-900 mb-1">Sign up</h2>
-          <p className="text-sm text-gray-400 mb-5">Create your Phonify account</p>
+          <p className="text-sm text-gray-400 mb-5">
+            Create your Phonify account
+          </p>
 
           {/* ── Google Sign-Up ── */}
           <div className="mb-4">
@@ -189,7 +256,9 @@ export default function Signup() {
           {/* Divider */}
           <div className="flex items-center gap-3 mb-4">
             <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-400 font-medium">or sign up with email</span>
+            <span className="text-xs text-gray-400 font-medium">
+              or sign up with email
+            </span>
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
@@ -198,7 +267,9 @@ export default function Signup() {
             {/* First + Last name */}
             <div className="flex gap-3 min-w-0">
               <div className="flex-1 min-w-0">
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">First Name</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  First Name
+                </label>
                 <div className={inputWrapClass("firstname")}>
                   <input
                     type="text"
@@ -210,19 +281,27 @@ export default function Signup() {
                     className="flex-1 bg-transparent focus:outline-none text-sm text-gray-800 placeholder-gray-400 font-medium disabled:opacity-60"
                     onFocus={(e) => {
                       e.target.parentElement.style.borderColor = "#0077b6";
-                      e.target.parentElement.style.boxShadow = "0 0 0 3px rgba(0,119,182,0.08)";
+                      e.target.parentElement.style.boxShadow =
+                        "0 0 0 3px rgba(0,119,182,0.08)";
                     }}
                     onBlur={(e) => {
                       e.target.parentElement.style.boxShadow = "none";
-                      if (!form.firstname) e.target.parentElement.style.borderColor = "#e5e7eb";
+                      if (!form.firstname)
+                        e.target.parentElement.style.borderColor = "#e5e7eb";
                     }}
                   />
                 </div>
-                {errors.firstname && <p className="text-red-500 text-xs mt-1">{errors.firstname}</p>}
+                {errors.firstname && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.firstname}
+                  </p>
+                )}
               </div>
 
               <div className="flex-1 min-w-0">
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Last Name</label>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  Last Name
+                </label>
                 <div className={inputWrapClass("lastname")}>
                   <input
                     type="text"
@@ -234,21 +313,27 @@ export default function Signup() {
                     className="flex-1 bg-transparent focus:outline-none text-sm text-gray-800 placeholder-gray-400 font-medium disabled:opacity-60"
                     onFocus={(e) => {
                       e.target.parentElement.style.borderColor = "#0077b6";
-                      e.target.parentElement.style.boxShadow = "0 0 0 3px rgba(0,119,182,0.08)";
+                      e.target.parentElement.style.boxShadow =
+                        "0 0 0 3px rgba(0,119,182,0.08)";
                     }}
                     onBlur={(e) => {
                       e.target.parentElement.style.boxShadow = "none";
-                      if (!form.lastname) e.target.parentElement.style.borderColor = "#e5e7eb";
+                      if (!form.lastname)
+                        e.target.parentElement.style.borderColor = "#e5e7eb";
                     }}
                   />
                 </div>
-                {errors.lastname && <p className="text-red-500 text-xs mt-1">{errors.lastname}</p>}
+                {errors.lastname && (
+                  <p className="text-red-500 text-xs mt-1">{errors.lastname}</p>
+                )}
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email address</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Email address
+              </label>
               <div className={inputWrapClass("email")}>
                 <input
                   type="email"
@@ -260,20 +345,26 @@ export default function Signup() {
                   className="flex-1 bg-transparent focus:outline-none text-sm text-gray-800 placeholder-gray-400 font-medium disabled:opacity-60"
                   onFocus={(e) => {
                     e.target.parentElement.style.borderColor = "#0077b6";
-                    e.target.parentElement.style.boxShadow = "0 0 0 3px rgba(0,119,182,0.08)";
+                    e.target.parentElement.style.boxShadow =
+                      "0 0 0 3px rgba(0,119,182,0.08)";
                   }}
                   onBlur={(e) => {
                     e.target.parentElement.style.boxShadow = "none";
-                    if (!form.email) e.target.parentElement.style.borderColor = "#e5e7eb";
+                    if (!form.email)
+                      e.target.parentElement.style.borderColor = "#e5e7eb";
                   }}
                 />
               </div>
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+              )}
             </div>
 
             {/* Phone */}
             <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">Phone Number</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Phone Number
+              </label>
               <div className={inputWrapClass("phone")}>
                 <input
                   type="tel"
@@ -283,22 +374,35 @@ export default function Signup() {
                   placeholder="10-digit mobile number"
                   disabled={submitting}
                   onKeyDown={(e) => {
-                    if (!/[0-9]/.test(e.key) && !["Backspace", "Tab", "ArrowLeft", "ArrowRight", "Delete"].includes(e.key)) {
+                    if (
+                      !/[0-9]/.test(e.key) &&
+                      ![
+                        "Backspace",
+                        "Tab",
+                        "ArrowLeft",
+                        "ArrowRight",
+                        "Delete",
+                      ].includes(e.key)
+                    ) {
                       e.preventDefault();
                     }
                   }}
                   className="flex-1 bg-transparent focus:outline-none text-sm text-gray-800 placeholder-gray-400 font-medium disabled:opacity-60"
                   onFocus={(e) => {
                     e.target.parentElement.style.borderColor = "#0077b6";
-                    e.target.parentElement.style.boxShadow = "0 0 0 3px rgba(0,119,182,0.08)";
+                    e.target.parentElement.style.boxShadow =
+                      "0 0 0 3px rgba(0,119,182,0.08)";
                   }}
                   onBlur={(e) => {
                     e.target.parentElement.style.boxShadow = "none";
-                    if (!form.phone) e.target.parentElement.style.borderColor = "#e5e7eb";
+                    if (!form.phone)
+                      e.target.parentElement.style.borderColor = "#e5e7eb";
                   }}
                 />
               </div>
-              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+              {errors.phone && (
+                <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
+              )}
             </div>
 
             {/* Submit */}
@@ -309,32 +413,46 @@ export default function Signup() {
                 className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2"
                 style={
                   !submitting && isFormValid
-                    ? { background: "#0077b6", color: "#fff", boxShadow: "0 2px 8px rgba(0,119,182,0.25)" }
-                    : { background: "#f3f4f6", color: "#9ca3af", cursor: "not-allowed" }
+                    ? {
+                        background: "#0077b6",
+                        color: "#fff",
+                        boxShadow: "0 2px 8px rgba(0,119,182,0.25)",
+                      }
+                    : {
+                        background: "#f3f4f6",
+                        color: "#9ca3af",
+                        cursor: "not-allowed",
+                      }
                 }
                 onMouseEnter={(e) => {
                   if (!submitting && isFormValid) {
                     e.currentTarget.style.background = "#005f8f";
                     e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,119,182,0.3)";
+                    e.currentTarget.style.boxShadow =
+                      "0 4px 12px rgba(0,119,182,0.3)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!submitting && isFormValid) {
                     e.currentTarget.style.background = "#0077b6";
                     e.currentTarget.style.transform = "";
-                    e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,119,182,0.25)";
+                    e.currentTarget.style.boxShadow =
+                      "0 2px 8px rgba(0,119,182,0.25)";
                   }
                 }}
               >
-                {submitting && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                {submitting && (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                )}
                 {submitting ? "Sending OTP…" : "Create Account"}
               </button>
             </div>
           </div>
 
           {apiError && (
-            <p className="text-red-500 text-xs mt-2 text-center font-medium">{apiError}</p>
+            <p className="text-red-500 text-xs mt-2 text-center font-medium">
+              {apiError}
+            </p>
           )}
 
           {/* Login link */}
@@ -350,6 +468,7 @@ export default function Signup() {
           </p>
         </div>
       </div>
+      <div id="recaptcha-container" />
     </div>
   );
 }
@@ -359,7 +478,10 @@ function FullScreenSpinner() {
     <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
       <div
         className="w-8 h-8 rounded-full animate-spin"
-        style={{ border: "3px solid rgba(0,119,182,0.15)", borderTopColor: "#0077b6" }}
+        style={{
+          border: "3px solid rgba(0,119,182,0.15)",
+          borderTopColor: "#0077b6",
+        }}
       />
     </div>
   );
