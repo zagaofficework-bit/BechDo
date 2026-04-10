@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 
 export default function OtpGeneration() {
-  const [otp, setOtp] = useState(["", "", "", ""]);
+const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [localErr, setLocalErr] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resending, setResending] = useState(false);
@@ -43,7 +43,7 @@ export default function OtpGeneration() {
     const next = [...otp];
     next[index] = value;
     setOtp(next);
-    if (value && index < 3) inputs.current[index + 1]?.focus();
+    if (value && index < 5) inputs.current[index + 1]?.focus();
   };
 
   const handleKeyDown = (e, index) => {
@@ -56,8 +56,8 @@ export default function OtpGeneration() {
     e.preventDefault();
     const otpValue = otp.join("");
 
-    if (otpValue.length < 4) {
-      setLocalErr("Please enter the complete 4-digit OTP");
+    if (otpValue.length < 6) {
+      setLocalErr("Please enter the complete 6-digit OTP");
       return;
     }
 
@@ -183,7 +183,7 @@ export default function OtpGeneration() {
               identity
             </h3>
             <p className="text-gray-400 text-xs text-center leading-relaxed max-w-[200px]">
-              We sent a 4-digit code to keep your account secure
+              We sent a 6-digit code to keep your account secure
             </p>
           </div>
 
@@ -311,13 +311,13 @@ export default function OtpGeneration() {
                     const pasted = e.clipboardData
                       .getData("text")
                       .replace(/\D/g, "")
-                      .slice(0, 4);
+                      .slice(0, 6);
                     const next = [...otp];
                     pasted.split("").forEach((char, i) => {
                       next[i] = char;
                     });
                     setOtp(next);
-                    inputs.current[Math.min(pasted.length, 3)]?.focus();
+                    inputs.current[Math.min(pasted.length, 5)]?.focus();
                   }}
                   onChange={(e) => handleChange(e.target.value, index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
@@ -409,7 +409,7 @@ export default function OtpGeneration() {
               disabled={submitting}
               className="w-full py-3.5 rounded-2xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2"
               style={
-                !submitting && filled === 4
+                !submitting && filled === 6
                   ? {
                       background: "#0077b6",
                       color: "#fff",
@@ -422,7 +422,7 @@ export default function OtpGeneration() {
                     }
               }
               onMouseEnter={(e) => {
-                if (!submitting && filled === 4) {
+                if (!submitting && filled === 6) {
                   e.currentTarget.style.background = "#005f8f";
                   e.currentTarget.style.transform = "translateY(-2px)";
                   e.currentTarget.style.boxShadow =
@@ -430,7 +430,7 @@ export default function OtpGeneration() {
                 }
               }}
               onMouseLeave={(e) => {
-                if (!submitting && filled === 4) {
+                if (!submitting && filled === 6) {
                   e.currentTarget.style.background = "#0077b6";
                   e.currentTarget.style.transform = "";
                   e.currentTarget.style.boxShadow =
@@ -442,7 +442,7 @@ export default function OtpGeneration() {
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               )}
               {submitting ? "Verifying…" : "Verify OTP"}
-              {!submitting && filled === 4 && (
+              {!submitting && filled === 6 && (
                 <svg
                   className="w-4 h-4"
                   fill="none"

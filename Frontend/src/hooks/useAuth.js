@@ -24,13 +24,23 @@ export const useAuth = () => {
 
   // AFTER
 
-  const setupRecaptcha = (containerId) => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-        size: "invisible",
-      });
-    }
-  };
+// AFTER
+const setupRecaptcha = (containerId) => {
+  // Stale verifier clear karo — production mein domain change pe yeh fail karta hai
+  if (window.recaptchaVerifier) {
+    try {
+      window.recaptchaVerifier.clear();
+    } catch (_) {}
+    window.recaptchaVerifier = null;
+  }
+  window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+    size: "invisible",
+    callback: () => {},
+    "expired-callback": () => {
+      window.recaptchaVerifier = null;
+    },
+  });
+};
 
   // ── Send OTP via Firebase ────────────────────────────────────────────────
   const sendOtp = async (phone) => {
