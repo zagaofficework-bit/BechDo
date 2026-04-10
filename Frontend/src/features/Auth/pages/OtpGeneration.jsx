@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 
 export default function OtpGeneration() {
-const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [localErr, setLocalErr] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resending, setResending] = useState(false);
@@ -274,7 +274,7 @@ const [otp, setOtp] = useState(["", "", "", "", "", ""]);
             <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-tight mb-1.5">
               Verify your
               <br />
-              email
+              phone number
             </h2>
             <div className="flex items-center gap-1.5 flex-wrap mt-1">
               <p className="text-sm text-gray-400">
@@ -297,7 +297,7 @@ const [otp, setOtp] = useState(["", "", "", "", "", ""]);
           {/* Form */}
           <form onSubmit={handleSubmit}>
             {/* OTP inputs */}
-            <div className="flex justify-center gap-3 mb-3">
+            <div className="flex justify-center gap-2 sm:gap-3 md:gap-4 mb-3">
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -322,7 +322,8 @@ const [otp, setOtp] = useState(["", "", "", "", "", ""]);
                   onChange={(e) => handleChange(e.target.value, index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
                   disabled={submitting}
-                  className="w-14 h-14 text-center text-xl font-black rounded-2xl border-2 focus:outline-none transition-all duration-200 disabled:opacity-60"
+                  // AFTER
+                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 text-center text-base sm:text-lg md:text-xl font-black rounded-xl sm:rounded-2xl border-2 focus:outline-none transition-all duration-200 disabled:opacity-60"
                   style={
                     digit
                       ? {

@@ -46,9 +46,22 @@ async function reverseGeocode(latitude, longitude) {
   return data.data;
 }
 
+// AFTER
 async function saveDetectedAddress(latitude, longitude, geocoded) {
   const token = localStorage.getItem("accessToken");
   if (!token) throw new Error("User not authenticated");
+
+  // Build full address string agar geocoder ne nahi diya
+  const parts = [
+    geocoded.street,
+    geocoded.city,
+    geocoded.state,
+    geocoded.pincode,
+    geocoded.country || "India",
+  ].filter(Boolean);
+  const fullAddress = geocoded.full && !geocoded.full.toLowerCase().includes("unnamed")
+    ? geocoded.full
+    : parts.join(", ") || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
 
   const res = await fetch(`${BASE_URL}/api/location/save-as-address`, {
     method: "POST",
@@ -60,12 +73,12 @@ async function saveDetectedAddress(latitude, longitude, geocoded) {
       latitude,
       longitude,
       isDefault: true,
-      street: geocoded.street || null,
-      city: geocoded.city || null,
-      state: geocoded.state || null,
+      street:  geocoded.street  || `Near ${latitude.toFixed(3)}, ${longitude.toFixed(3)}`,
+      city:    geocoded.city    || null,
+      state:   geocoded.state   || null,
       pincode: geocoded.pincode || null,
       country: geocoded.country || "India",
-      full: geocoded.full || null,
+      full:    fullAddress,
     }),
   });
 
@@ -181,7 +194,7 @@ export function LocationConfirmPopup({ preview, onConfirm, onCancel, saving }) {
 }
 
 // ─── Desktop LocationButton (unchanged behavior) ──────────────────────────────
-function LocationButton() {
+function LocationButton({ onSaved }) {
   const [phase, setPhase] = useState("idle");
   const [preview, setPreview] = useState(null);
   const [coords, setCoords] = useState(null);
@@ -202,10 +215,25 @@ function LocationButton() {
     }
   };
 
+// AFTER
   const handleConfirm = async () => {
     setPhase("saving");
     try {
-      await saveDetectedAddress(coords.latitude, coords.longitude, preview);
+      const result = await saveDetectedAddress(coords.latitude, coords.longitude, preview);
+      // User context update karo — hasDefaultAddress instantly true ho jayega
+      onSaved?.({
+        defaultAddress: {
+          street:  preview.street  || null,
+          city:    preview.city    || null,
+          state:   preview.state   || null,
+          pincode: preview.pincode || null,
+          full:    preview.full    || [preview.street, preview.city, preview.state].filter(Boolean).join(", "),
+        },
+        location: {
+          type: "Point",
+          coordinates: [coords.longitude, coords.latitude],
+        },
+      });
       setPhase("done");
       setTimeout(() => {
         setPhase("idle");
@@ -287,7 +315,7 @@ function LocationButton() {
 }
 
 // ─── Mobile LocationButton (compact icon-only, with same popup flow) ──────────
-export function MobileLocationButton() {
+export function MobileLocationButton({ onSaved }) {
   const [phase, setPhase] = useState("idle");
   const [preview, setPreview] = useState(null);
   const [coords, setCoords] = useState(null);
@@ -308,10 +336,24 @@ export function MobileLocationButton() {
     }
   };
 
+// AFTER — same as LocationButton ka handleConfirm upar wala
   const handleConfirm = async () => {
     setPhase("saving");
     try {
       await saveDetectedAddress(coords.latitude, coords.longitude, preview);
+      onSaved?.({
+        defaultAddress: {
+          street:  preview.street  || null,
+          city:    preview.city    || null,
+          state:   preview.state   || null,
+          pincode: preview.pincode || null,
+          full:    preview.full    || [preview.street, preview.city, preview.state].filter(Boolean).join(", "),
+        },
+        location: {
+          type: "Point",
+          coordinates: [coords.longitude, coords.latitude],
+        },
+      });
       setPhase("done");
       setTimeout(() => {
         setPhase("idle");
@@ -420,7 +462,7 @@ function IconBtn({ onClick, active, activeClass, inactiveClass, children, title 
 export default function NavBar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, handleLogout } = useAuth();
+  const { user, isAuthenticated, handleLogout, updateUser } = useAuth();
   const { subscription } = useSubscriptionContext();
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -524,7 +566,7 @@ export default function NavBar() {
             {isAuthenticated && !isAdmin && (
               <div className="flex items-center gap-1 md:hidden">
                 {/* Location button — mobile (shown only if no default address) */}
-                {!hasDefaultAddress && <MobileLocationButton />}
+                {!hasDefaultAddress && <MobileLocationButton onSaved={updateUser} /> }
 
                 {/* Wishlist */}
                 <IconBtn
@@ -586,7 +628,7 @@ export default function NavBar() {
                     <PiCrown className="text-3xl lg:text-4xl text-[#0077b6]" />
                   </div>
                 )}
-                {!isAdmin && !hasDefaultAddress && <LocationButton />}
+                {!isAdmin && !hasDefaultAddress && <LocationButton onSaved={updateUser} />}
                 {showShopIcons && (
                   <>
                     <IconBtn
