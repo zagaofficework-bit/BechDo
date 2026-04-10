@@ -3,6 +3,7 @@
 import { useNavigate } from "react-router-dom";
 import { useSellFlow } from "../../../context/sellflow.context";
 import { useEffect } from "react";
+import LazyImage from "../../../components/LazyImage";
 
 const BLUE      = "#0077b6";
 const BLUE_DARK = "#005f8f";
@@ -60,7 +61,7 @@ export default function BasePrice() {
           {/* Image panel */}
           <div className="bp-img-panel" style={s.imgPanel}>
             {selectedModel.image
-              ? <img src={selectedModel.image} alt={selectedModel.name} className="bp-img" style={s.img} />
+              ? <LazyImage src={selectedModel.image} alt={selectedModel.name} className="bp-img" style={s.img} />
               : <span style={{ fontSize: 52 }}>📱</span>}
           </div>
 

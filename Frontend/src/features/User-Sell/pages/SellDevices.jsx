@@ -6,7 +6,6 @@ import { faShieldAlt, faBolt, faMoneyBillWave } from "@fortawesome/free-solid-sv
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSellFlow } from "../../../context/sellflow.context";
 import toast from "react-hot-toast";
-import LazyImage from "../../../components/LazyImage";
 
 const benefits = [
   { icon: faShieldAlt,     title: "Safe & Secure",    description: "Select your device & we'll help you unlock the best selling price based on the present conditions of your gadget & the current market price." },
