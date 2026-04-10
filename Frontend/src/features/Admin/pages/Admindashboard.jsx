@@ -12,6 +12,7 @@ import PlanBadge from "../components/common/PlanBadge";
 import SellerCard from "../components/Seller/SellerCard";
 import SellerDetailPanel from "../components/Seller/SellerDetailPanel";
 import ActionModal from "../components/Seller/ActionModal";
+import LazyImage from "../../../components/LazyImage";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const BASE_URL   = import.meta.env.VITE_API_URL   || "http://localhost:3000/api";
@@ -487,7 +488,7 @@ const ChatWindow = ({ seller, adminId, onBack }) => {
       {imgPreview && (
         <div className="px-4 pt-2 pb-1 bg-white border-t border-slate-100 flex items-center gap-2 flex-shrink-0">
           <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-200 flex-shrink-0">
-            <img src={imgPreview} alt="" className="w-full h-full object-cover" />
+            <LazyImage src={imgPreview} alt="" className="w-full h-full object-cover" />
             <button onClick={clearImg} className="absolute top-0.5 right-0.5 w-4 h-4 bg-slate-900/60 text-white rounded-full text-xs flex items-center justify-center">✕</button>
           </div>
           <span className="text-xs text-slate-400 truncate">{imgFile?.name}</span>

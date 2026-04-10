@@ -2,6 +2,17 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useProductContext } from "../../../context/product.context";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BackButton from "../../common/BackButton";
+import { useQuery } from "@tanstack/react-query";
+import { productKeys } from "../../../hooks/useProducts.query";
+
+function useDebounce(value, delay = 400) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
 
 function resolveFieldValue(device, key) {
   switch (key) {
@@ -1277,55 +1288,55 @@ function MobileSortDrawer({ open, onClose, sortBy, onSort }) {
 
 // ─── MAIN EXPORT ──────────────────────────────────────────────────────────────
 export default function Filter({ data, category }) {
-  const {
-    pageTitle = "Devices",
-    filterConfig = [],
-    devices: staticDevices = [],
-    priceRange = { min: 0, max: 200000, step: 1000 },
-  } = data || {};
 
-  const {
-    products,
-    pagination,
-    loading,
-    error,
-    fetchProducts,
-    updateFilter,
-    resetFilters,
-  } = useProductContext();
+  const { filterConfig = [], priceRange = { min: 0, max: 200000, step: 1000 } } = data || {};
   const [searchParams] = useSearchParams();
 
-  const initialFilters = () => {
+  const [searchQuery,  setSearchQuery]  = useState("");
+  const [sortBy,       setSortBy]       = useState("newest");
+  const [activeFilters,setActiveFilters]= useState(() => {
     const pre = {};
     for (const [key, val] of searchParams.entries()) {
       if (!val) continue;
-      // deviceType: URL lowercase ("refurbished") → UI Title Case ("Refurbished")
-      if (key === "deviceType") {
-        pre[key] = [val.charAt(0).toUpperCase() + val.slice(1)];
-      }
-      if (key === "brand") {
-        pre[key] = [val.charAt(0).toUpperCase() + val.slice(1)];
-      } else {
-        pre[key] = [val];
-      }
+      pre[key] = [val.charAt(0).toUpperCase() + val.slice(1)];
     }
     return pre;
-  };
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
-  const [activeFilters, setActiveFilters] = useState(initialFilters);
-
+  });
   const [priceMin, setPriceMin] = useState(priceRange.min);
   const [priceMax, setPriceMax] = useState(priceRange.max);
+  const [page, setPage]         = useState(1);
+
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [mobileSortOpen, setMobileSortOpen] = useState(false);
   const [previewDevice, setPreviewDevice] = useState(null);
 
-  // ← ADD THIS: re-sync filters when URL search params change
-  useEffect(() => {
-    setActiveFilters(initialFilters());
-  }, [searchParams.toString()]);
+    // ── Debounce search — API call 400ms baad hoga ─────────────────
+  const debouncedSearch = useDebounce(searchQuery, 400);
+
+  // ── Stable filter object — sirf tab naya banta hai jab values change hon
+  const apiFilters = useMemo(() => {
+    const params = { category, status: "available", sortBy, limit: 20, page };
+    if (priceMin > priceRange.min) params.minPrice = priceMin;
+    if (priceMax < priceRange.max) params.maxPrice = priceMax;
+    if (debouncedSearch) params.search = debouncedSearch;
+
+    for (const [key, vals] of Object.entries(activeFilters)) {
+      if (!vals.length) continue;
+      if (key === "deviceType") { params.deviceType = vals[0].toLowerCase(); continue; }
+      if (key === "condition")  { params.condition  = vals[0]; continue; }
+      if (key === "brand")      { params.brand      = vals[0]; continue; }
+      if (key === "storage")    { params.storage    = vals[0]; continue; }
+    }
+    return params;
+  }, [category, sortBy, priceMin, priceMax, debouncedSearch, activeFilters, page, priceRange]);
+
+  // ── React Query — sirf tab refetch hoga jab apiFilters change ho ──
+  const { data: queryData, isLoading, error } = useQuery({
+    queryKey: productKeys.list(apiFilters),
+    queryFn:  () => getAllProducts(apiFilters),
+    keepPreviousData: true,   // page change pe flicker nahi
+    staleTime: 1000 * 60 * 2,
+  });
 
   const buildParams = useCallback(
     (overrides = {}) => {
@@ -1378,20 +1389,24 @@ export default function Filter({ data, category }) {
     ],
   );
 
-  const doFetch = useCallback(
-    (overrides = {}) => {
-      fetchProducts(buildParams(overrides));
-    },
-    [fetchProducts, buildParams],
-  );
+  const products   = queryData?.products   ?? [];
+  const pagination = queryData?.pagination ?? {};
 
-  useEffect(() => {
-    if (category) doFetch();
-  }, [category]);
-  useEffect(() => {
-    if (category) doFetch();
-  }, [sortBy]);
-  useEffect(() => { if (category) doFetch(); }, [searchParams.toString()]); // ← ADD THIS
+  const toggleFilter = useCallback((key, val) => {
+    setActiveFilters(prev => {
+      const cur = prev[key] ?? [];
+      return { ...prev, [key]: cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val] };
+    });
+    setPage(1);
+  }, []);
+
+  const resetAll = useCallback(() => {
+    setActiveFilters({});
+    setPriceMin(priceRange.min);
+    setPriceMax(priceRange.max);
+    setSearchQuery("");
+    setPage(1);
+  }, [priceRange]);
 
 
   const sourceDevices = products.length > 0 ? products : staticDevices;
@@ -1468,32 +1483,9 @@ export default function Filter({ data, category }) {
     return list;
   }, [sourceDevices, searchQuery, priceMin, priceMax, activeFilters, sortBy]);
 
-  const toggleFilter = (key, val) =>
-    setActiveFilters((prev) => {
-      const cur = prev[key] || [];
-      return {
-        ...prev,
-        [key]: cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val],
-      };
-    });
-
-  const resetAll = () => {
-    setActiveFilters({});
-    setPriceMin(priceRange.min);
-    setPriceMax(priceRange.max);
-    setSearchQuery("");
-    resetFilters();
-    fetchProducts({
-      category,
-      status: "available",
-      sortBy: "newest",
-      limit: 20,
-    });
-  };
-
   const handlePageChange = (page) => {
+    setPage(page);
     updateFilter({ page });
-    doFetch({ page });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -1571,7 +1563,7 @@ export default function Filter({ data, category }) {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && doFetch()}
+            onKeyDown={(e) => e.key === "Enter" && setPage(1)}
             placeholder={`Search ${pageTitle.toLowerCase()}…`}
             className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-all"
             onFocus={(e) => {
@@ -1596,7 +1588,7 @@ export default function Filter({ data, category }) {
           <option value="discount">Best Discount</option>
         </select>
         <button
-          onClick={() => doFetch()}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors"
           style={{ backgroundColor: "#0077b6" }}
           onMouseEnter={(e) =>

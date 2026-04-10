@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { getEvaluationConfig } from "../../../services/deviceSell.api";
 import { useSellFlow } from "../../../context/sellflow.context";
 import toast from "react-hot-toast";
+import LazyImage from "../../../components/LazyImage";
 
 const BLUE      = "#0077b6";
 const TEAL      = "#00b4a0";
@@ -15,7 +16,7 @@ function DeviceCard({ model, variant }) {
     <div style={dc.wrap}>
       <div style={dc.imgBox}>
         {model?.image
-          ? <img src={model.image} alt={model.name} style={{ width: "80%", height: "100%", objectFit: "contain" }} />
+          ? <LazyImage src={model.image} alt={model.name} style={{ width: "80%", height: "100%", objectFit: "contain" }} />
           : <span style={{ fontSize: 22 }}>📱</span>}
       </div>
       <div>

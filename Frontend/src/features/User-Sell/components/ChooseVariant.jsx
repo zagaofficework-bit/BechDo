@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { getVariantsByModel } from "../../../services/deviceSell.api";
 import { useSellFlow } from "../../../context/sellflow.context";
 import toast from "react-hot-toast";
+import LazyImage from "../../../components/LazyImage";
 
 const BLUE = "#0077b6";
 const BLUE_DARK = "#005f8f";
@@ -91,7 +92,7 @@ export default function ChooseVariant() {
               <div style={s.deviceRow}>
                 <div style={s.imgBox}>
                   {selectedModel.image ? (
-                    <img src={selectedModel.image} alt={selectedModel.name} style={s.img} />
+                    <LazyImage src={selectedModel.image} alt={selectedModel.name} style={s.img} />
                   ) : (
                     <span style={{ fontSize: 32 }}>📱</span>
                   )}

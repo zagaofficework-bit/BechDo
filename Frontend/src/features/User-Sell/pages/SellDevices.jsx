@@ -6,6 +6,7 @@ import { faShieldAlt, faBolt, faMoneyBillWave } from "@fortawesome/free-solid-sv
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSellFlow } from "../../../context/sellflow.context";
 import toast from "react-hot-toast";
+import LazyImage from "../../../components/LazyImage";
 
 const benefits = [
   { icon: faShieldAlt,     title: "Safe & Secure",    description: "Select your device & we'll help you unlock the best selling price based on the present conditions of your gadget & the current market price." },
@@ -87,7 +88,7 @@ export default function SellDevices({ models = [], brand, category, loading = fa
                 >
                   <div className="sd-model-img w-45 h-35 flex items-center justify-center mb-2">
                     {model.image ? (
-                      <img src={model.image} alt={model.name} className="object-contain h-full" loading="lazy" onError={(e) => { e.target.onerror = null; e.target.src = "/fallback-device.png"; }} />
+                      <LazyImage src={model.image} alt={model.name} className="object-contain h-full" loading="lazy" onError={(e) => { e.target.onerror = null; e.target.src = "/fallback-device.png"; }} />
                     ) : (
                       <div className="w-16 h-24 bg-gray-100 rounded-lg" />
                     )}

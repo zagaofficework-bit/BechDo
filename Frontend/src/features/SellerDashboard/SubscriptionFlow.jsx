@@ -16,7 +16,7 @@ export default function SubscriptionFlow() {
     if (user?.role === "seller") {
       fetchMySubscription();
     }
-  }, [user]);
+  }, [user?.role]);
 
   const handleSuccess = async () => {
     await getMe();

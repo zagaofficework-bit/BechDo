@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js";
+import LazyImage from "../../components/LazyImage";
 import {
   Elements,
   CardNumberElement,
@@ -113,7 +114,7 @@ function CartItem({ item, onRemove }) {
         className="w-20 h-20 rounded-xl bg-gradient-to-br from-slate-50 to-blue-50/30 border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer"
       >
         {product.images?.[0] ? (
-          <img
+          <LazyImage
             src={product.images[0]}
             alt={product.title}
             className="w-full h-full object-cover"

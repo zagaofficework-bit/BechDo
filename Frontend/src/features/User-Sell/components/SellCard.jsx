@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BackButton from "../../common/BackButton";
+import LazyImage from "../../../components/LazyImage";
 
 const VISIBLE_COUNT = 6;
 
@@ -259,7 +260,7 @@ export default function SellCard({
                         title={brand}
                         className="brand-card flex flex-col items-center gap-1.5 w-20 pt-3 pb-2.5 px-2.5 bg-white border-[1.5px] border-[#e8f4f8] rounded-2xl cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,119,182,0.05)]"
                       >
-                        <img
+                        <LazyImage
                           src={logo}
                           alt={brand}
                           className="w-10 h-8 sm:w-12 sm:h-9 md:w-14 md:h-10 object-contain transition-transform duration-200 group-hover:scale-105"
@@ -333,7 +334,7 @@ export default function SellCard({
             </div>
 
             <div className="phone-card">
-              <img
+              <LazyImage
                 src="/images/Phonify-banner.png"
                 alt="Sell your phone"
                 onError={(e) => {

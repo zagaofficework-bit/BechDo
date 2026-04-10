@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 import { useSubscriptionContext } from "../../../context/subscription.context";
@@ -497,11 +497,13 @@ export default function NavBar() {
 
   const isAdmin = isAuthenticated && user?.role === "admin";
   const isSeller = isAuthenticated && user?.role === "seller";
-  const isPremium =
-    (isSeller &&
-      subscription?.plan?.toLowerCase() === "premium" &&
-      subscription?.status === "active") ||
-    (isSeller && user?.isSuperSeller === true);
+  const isPremium = useMemo(() => {
+  if (!isSeller) return false;
+  return (
+    subscription?.plan?.toLowerCase() === "premium" &&
+    subscription?.status === "active"
+  ) || user?.isSuperSeller === true;
+}, [isSeller, subscription?.plan, subscription?.status, user?.isSuperSeller]);
 
   const hasDefaultAddress = !!(
     user?.defaultAddress?.city ||

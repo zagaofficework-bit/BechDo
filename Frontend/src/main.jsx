@@ -4,12 +4,25 @@ import './index.css'
 import App from './App.jsx'
 import ErrorBoundary from './features/common/ErrorBoundary';
 import { HelmetProvider } from 'react-helmet-async';  // ← add this
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 
-createRoot(document.getElementById('root')).render(
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,   
+      gcTime: 1000 * 60 * 10,      
+      refetchOnWindowFocus: false,  
+    },
+  },
+});
+
+createRoot(document.getElementById("root")).render(
   <ErrorBoundary>
     <HelmetProvider>
-    <App />
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
     </HelmetProvider>
-  </ErrorBoundary>,
-)
+  </ErrorBoundary>
+);

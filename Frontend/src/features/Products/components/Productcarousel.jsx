@@ -1,6 +1,8 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllProducts } from "../../../services/product.api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { productKeys } from "../../../hooks/useProducts.query";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatINR   = (n)    => n?.toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -181,72 +183,58 @@ function useCarouselConfig() {
 
 // ─── Main carousel ────────────────────────────────────────────────────────────
 const ProductCarousel = memo(({ title, category, deviceType = "refurbished", viewAllPath = "/" }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [products, setProducts]         = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState(null);
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { cardWidth, gap, visible } = useCarouselConfig();
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Touch/swipe support
-  const touchStartX = useRef(null);
-  const touchEndX   = useRef(null);
+  const filters = { deviceType, category, sortBy: "newest", page: 1, limit: 10 };
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await getAllProducts({ deviceType, category, sortBy: "newest", page: 1, limit: 10 });
-        if (!cancelled) setProducts(res.products ?? []);
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [deviceType, category]);
+  // ── React Query — auto cache, no manual loading state ─────────
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: productKeys.list(filters),
+    queryFn:  () => getAllProducts(filters),
+    select:   (d) => d.products ?? [],
+    staleTime: 1000 * 60 * 5,   // 5 min cache
+  });
 
-  // Reset index on resize (visible count changes)
-  useEffect(() => {
-    setCurrentIndex(0);
-  }, [visible]);
+  // ── Prefetch product detail on hover ──────────────────────────
+  const handleCardHover = useCallback((productId) => {
+    qc.prefetchQuery({
+      queryKey: productKeys.detail(productId),
+      queryFn:  () => getProductById(productId),
+      staleTime: 1000 * 60 * 3,
+    });
+  }, [qc]);
 
-  const maxIndex = Math.max(0, products.length - visible);
-  const canPrev  = currentIndex > 0;
-  const canNext  = currentIndex < maxIndex;
-
-  const handlePrev    = useCallback(() => setCurrentIndex((i) => Math.max(0, i - 1)), []);
-  const handleNext    = useCallback(() => setCurrentIndex((i) => Math.min(maxIndex, i + 1)), [maxIndex]);
-  const handleViewAll = useCallback(() => navigate(viewAllPath), [navigate, viewAllPath]);
   const handleCardClick = useCallback((productId) => navigate(`/product/${productId}`), [navigate]);
 
-  // Swipe handlers
-  const onTouchStart  = (e) => { touchStartX.current = e.touches[0].clientX; };
-  const onTouchMove   = (e) => { touchEndX.current = e.touches[0].clientX; };
-  const onTouchEnd    = () => {
-    if (touchStartX.current === null || touchEndX.current === null) return;
+  // Touch swipe
+  const touchStartX = useRef(null);
+  const touchEndX   = useRef(null);
+  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchMove  = (e) => { touchEndX.current   = e.touches[0].clientX; };
+  const onTouchEnd   = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
     const diff = touchStartX.current - touchEndX.current;
+    const maxIndex = Math.max(0, products.length - visible);
     if (Math.abs(diff) > 40) {
-      if (diff > 0 && canNext) handleNext();
-      if (diff < 0 && canPrev) handlePrev();
+      if (diff > 0) setCurrentIndex(i => Math.min(maxIndex, i + 1));
+      if (diff < 0) setCurrentIndex(i => Math.max(0, i - 1));
     }
     touchStartX.current = null;
     touchEndX.current   = null;
   };
 
+  const maxIndex = Math.max(0, products.length - visible);
+
   return (
     <section className="py-8 sm:py-10 md:py-12 bg-[#f5f5f5]">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-5 sm:mb-7">
           <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-gray-900">{title}</h2>
-          <button
-            onClick={handleViewAll}
-            className="text-xs sm:text-sm font-semibold text-[#00b4d8ff] hover:underline flex items-center gap-1"
-          >
+          <button onClick={() => navigate(viewAllPath)}
+            className="text-xs sm:text-sm font-semibold text-[#00b4d8ff] hover:underline flex items-center gap-1">
             View all
             <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -254,66 +242,36 @@ const ProductCarousel = memo(({ title, category, deviceType = "refurbished", vie
           </button>
         </div>
 
-        {/* Carousel body */}
         <div className="relative px-3 sm:px-5">
-          {loading && (
+          {isLoading && (
             <div className="flex gap-3 sm:gap-4">
               {Array.from({ length: visible }).map((_, i) => <SkeletonCard key={i} width={cardWidth} />)}
             </div>
           )}
 
-          {!loading && error && (
-            <p className="text-red-500 text-sm">Failed to load products: {error}</p>
+          {!isLoading && products.length === 0 && (
+            <p className="text-gray-500 text-sm">No {category} products available.</p>
           )}
 
-          {!loading && !error && products.length === 0 && (
-            <p className="text-gray-500 text-sm">No {category} products available right now.</p>
-          )}
-
-          {!loading && !error && products.length > 0 && (
+          {!isLoading && products.length > 0 && (
             <>
-              <div
-                className="overflow-hidden"
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
-              >
-                <div
-                  className="flex transition-transform duration-500 ease-in-out"
-                  style={{
-                    gap: `${gap}px`,
-                    transform: `translateX(-${currentIndex * (cardWidth + gap)}px)`,
-                  }}
-                >
+              <div className="overflow-hidden"
+                onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+                <div className="flex transition-transform duration-500 ease-in-out"
+                  style={{ gap: `${gap}px`, transform: `translateX(-${currentIndex * (cardWidth + gap)}px)` }}>
                   {products.map((product, i) => (
                     <ProductCard
                       key={product._id ?? i}
                       product={product}
                       width={cardWidth}
                       onClick={() => handleCardClick(product._id)}
+                      onMouseEnter={() => handleCardHover(product._id)}  // ← prefetch on hover
                     />
                   ))}
                 </div>
               </div>
-              <ArrowButton direction="prev" onClick={handlePrev} disabled={!canPrev} />
-              <ArrowButton direction="next" onClick={handleNext} disabled={!canNext} />
-
-              {/* Dot indicators — mobile */}
-              {products.length > visible && (
-                <div className="flex justify-center gap-1.5 mt-4 sm:hidden">
-                  {Array.from({ length: maxIndex + 1 }).map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentIndex(i)}
-                      className={`rounded-full transition-all duration-200 ${
-                        i === currentIndex
-                          ? "w-4 h-1.5 bg-[#0077b6]"
-                          : "w-1.5 h-1.5 bg-gray-300"
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
+              <ArrowButton direction="prev" onClick={() => setCurrentIndex(i => Math.max(0, i - 1))} disabled={currentIndex === 0} />
+              <ArrowButton direction="next" onClick={() => setCurrentIndex(i => Math.min(maxIndex, i + 1))} disabled={currentIndex >= maxIndex} />
             </>
           )}
         </div>
@@ -321,6 +279,7 @@ const ProductCarousel = memo(({ title, category, deviceType = "refurbished", vie
     </section>
   );
 });
+
 ProductCarousel.displayName = "ProductCarousel";
 
 export default ProductCarousel;

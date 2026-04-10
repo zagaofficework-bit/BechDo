@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 import { getProductById } from "../../../services/product.api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { productKeys } from "../../../hooks/useProducts.query";
 import {
   addToWishlist,
   removeFromWishlist,
@@ -16,6 +18,26 @@ import SimilarProducts from "../components/SimilarProducts";
 import ReviewSection from "../components/ReviewSection";
 import { createPortal } from "react-dom";
 import CompareDevices from "./CompareDevices";
+import LazyImage from "../../../components/LazyImage";
+
+
+const useWishlistStatus = (productId, isAuthenticated) =>
+  useQuery({
+    queryKey: ["wishlist", "check", productId],
+    queryFn:  () => checkWishlist(productId),
+    enabled:  !!productId && isAuthenticated,
+    select:   (d) => d.isWishlisted ?? false,
+    staleTime: 1000 * 60 * 5,
+  });
+
+const useCartStatus = (productId, isAuthenticated) =>
+  useQuery({
+    queryKey: ["cart", "check", productId],
+    queryFn:  () => checkCart(productId),
+    enabled:  !!productId && isAuthenticated,
+    select:   (d) => d.isInCart ?? false,
+    staleTime: 1000 * 60 * 5,
+  });
 
 // ─── Icon helper ──────────────────────────────────────────────────────────────
 const Ic = ({ d, className = "w-5 h-5", fill = "none" }) => (
@@ -358,7 +380,7 @@ function ImageGallery({ images, video }) {
             >
               {media.type === "image" ? (
                 media.url ? (
-                  <img
+                  <LazyImage
                     src={media.url}
                     alt=""
                     className="w-12 h-12 object-contain"
@@ -393,7 +415,7 @@ function ImageGallery({ images, video }) {
           >
             <Ic d={ICONS.close} className="w-6 h-6" />
           </button>
-          <img
+          <LazyImage
             src={active.url}
             alt="full view"
             className="max-w-full max-h-full object-contain rounded-xl"
@@ -436,11 +458,7 @@ export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
-
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [wishlisted, setWishlisted] = useState(false);
-  const [inCart, setInCart] = useState(false);
+  const qc = useQueryClient();
   const [wLoading, setWLoading] = useState(false);
   const [cLoading, setCLoading] = useState(false);
   const [toast, setToast] = useState(null);
@@ -449,15 +467,6 @@ export default function ProductDetails() {
   const [showCompare, setShowCompare] = useState(false);
 
   const showToast = (msg, type = "success") => setToast({ msg, type });
-
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    getProductById(id)
-      .then((res) => setProduct(res.data ?? res.product ?? res))
-      .catch(() => showToast("Failed to load product", "error"))
-      .finally(() => setLoading(false));
-  }, [id]);
 
   useEffect(() => {
     if (!id || !isAuthenticated) return;
@@ -469,50 +478,6 @@ export default function ProductDetails() {
       .catch(() => {});
   }, [id, isAuthenticated]);
 
-  const handleWishlist = async () => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-    setWLoading(true);
-    try {
-      if (wishlisted) {
-        await removeFromWishlist(id);
-        setWishlisted(false);
-        showToast("Removed from wishlist");
-      } else {
-        await addToWishlist(id);
-        setWishlisted(true);
-        showToast("Added to wishlist ♥");
-      }
-    } catch (e) {
-      showToast(e.message, "error");
-    } finally {
-      setWLoading(false);
-    }
-  };
-
-  const handleAddToCart = async () => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
-    if (inCart) {
-      navigate("/cart");
-      return;
-    }
-    setCLoading(true);
-    try {
-      await addToCart(id);
-      setInCart(true);
-      showToast("Added to cart!");
-    } catch (e) {
-      showToast(e.message, "error");
-    } finally {
-      setCLoading(false);
-    }
-  };
-
   const handleBuyNow = () => {
     if (!isAuthenticated) {
       navigate("/login");
@@ -521,36 +486,64 @@ export default function ProductDetails() {
     setShowBuyNow(true);
   };
 
+  const {
+    data: product,
+    isLoading: loading,
+    error,
+  } = useQuery({
+    queryKey: productKeys.detail(id),
+    queryFn:  () => getProductById(id),
+    enabled:  !!id,
+    select:   (d) => d.data ?? d.product ?? d,
+    staleTime: 1000 * 60 * 3,
+  });
+
+  const { data: wishlisted = false } = useWishlistStatus(id, isAuthenticated);
+  const wishlistMutation = useMutation({
+    mutationFn: () => wishlisted ? removeFromWishlist(id) : addToWishlist(id),
+    onSuccess: () => {
+      qc.setQueryData(["wishlist", "check", id], { isWishlisted: !wishlisted });
+    },
+  });
+
+  const { data: inCart = false } = useCartStatus(id, isAuthenticated);
+  const cartMutation = useMutation({
+    mutationFn: () => addToCart(id),
+    onSuccess: () => {
+      qc.setQueryData(["cart", "check", id], { isInCart: true });
+    },
+  });
+
+  const handleWishlist = () => {
+    if (!isAuthenticated) { navigate("/login"); return; }
+    wishlistMutation.mutate();
+  };
+
+  const handleAddToCart = () => {
+    if (!isAuthenticated) { navigate("/login"); return; }
+    if (inCart) { navigate("/cart"); return; }
+    cartMutation.mutate();
+  };
+
+
+
   if (showBuyNow && product)
     return <BuyNowPage product={product} onBack={() => setShowBuyNow(false)} />;
 
-  if (loading)
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div
-          className="w-8 h-8 rounded-full animate-spin"
-          style={{
-            border: "3px solid rgba(0,119,182,0.2)",
-            borderTopColor: "#0077b6",
-          }}
-        />
-      </div>
-    );
+  if (loading) return (
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full animate-spin"
+        style={{ border: "3px solid rgba(0,119,182,0.2)", borderTopColor: "#0077b6" }} />
+    </div>
+  );
 
-  if (!product)
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
-        <span className="text-5xl">📦</span>
-        <p className="text-slate-600 font-semibold">Product not found</p>
-        <button
-          onClick={() => navigate(-1)}
-          style={{ color: "#0077b6" }}
-          className="text-sm font-semibold hover:underline"
-        >
-          ← Go back
-        </button>
-      </div>
-    );
+  if (error || !product) return (
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
+      <span className="text-5xl">📦</span>
+      <p className="text-slate-600 font-semibold">Product not found</p>
+      <button onClick={() => navigate(-1)} className="text-sm font-semibold text-[#0077b6] hover:underline">← Go back</button>
+    </div>
+  );
 
   const discount = product.originalPrice
     ? Math.round(
@@ -1101,7 +1094,7 @@ export default function ProductDetails() {
                           key={i}
                           className="bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden"
                         >
-                          <img
+                          <LazyImage
                             src={img}
                             alt={`view-${i}`}
                             className="w-full h-40 object-cover"

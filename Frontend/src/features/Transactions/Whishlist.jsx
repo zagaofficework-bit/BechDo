@@ -6,6 +6,7 @@ import {
   getWishlist, removeFromWishlist,
   addToCart, checkCart,clearWishlist,
 } from "../../services/shop.api";
+import LazyImage from "../../components/LazyImage";
 
 // ─── icon helper ─────────────────────────────────────────────────────────────
 const Ic = ({ d, className = "w-5 h-5" }) => (
@@ -114,7 +115,7 @@ function WishlistCard({ product, onRemove, onCartChange, navigate }) {
         </button>
 
         {product.images?.[0]
-          ? <img src={product.images[0]} alt={product.title} className="h-36 w-auto object-contain group-hover:scale-105 transition-transform duration-300" />
+          ? <LazyImage src={product.images[0]} alt={product.title} className="h-36 w-auto object-contain group-hover:scale-105 transition-transform duration-300" />
           : <span className="text-5xl opacity-20">📱</span>}
       </div>
 
