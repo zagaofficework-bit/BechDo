@@ -255,34 +255,29 @@ export default function OtpGeneration() {
           </div>
 
           {/* Heading */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8 text-center sm:text-left">
             <div
-              className="inline-flex items-center gap-2 rounded-full px-3 py-1 mb-4"
+              className="inline-flex items-center gap-2 rounded-full px-3 py-1 mb-3 sm:mb-4"
               style={{ background: "#e8f4fd", border: "1px solid #cce4f6" }}
             >
-              <div
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: "#0077b6" }}
-              />
-              <span
-                className="text-xs font-semibold"
-                style={{ color: "#0077b6" }}
-              >
+              <div className="w-1.5 h-1.5 rounded-full bg-[#0077b6]" />
+              <span className="text-[10px] sm:text-xs font-semibold text-[#0077b6]">
                 OTP Verification
               </span>
             </div>
-            <h2 className="text-3xl font-black text-gray-900 tracking-tight leading-tight mb-1.5">
-              Verify your
-              <br />
+
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight leading-tight mb-1.5">
+              Verify your <br className="hidden sm:block" />
               phone number
             </h2>
-            <div className="flex items-center gap-1.5 flex-wrap mt-1">
-              <p className="text-sm text-gray-400">
+
+            <div className="flex items-center justify-center sm:justify-start gap-1.5 flex-wrap mt-1">
+              <p className="text-xs sm:text-sm text-gray-400">
                 Code sent to{" "}
                 <span className="font-semibold text-gray-700">{phone}</span>
               </p>
               <span
-                className="cursor-pointer text-sm"
+                className="cursor-pointer text-sm hover:scale-110 transition-transform"
                 onClick={() =>
                   navigate(otpTarget === "login" ? "/login" : "/signup", {
                     replace: true,
@@ -297,7 +292,7 @@ export default function OtpGeneration() {
           {/* Form */}
           <form onSubmit={handleSubmit}>
             {/* OTP inputs */}
-            <div className="flex justify-center gap-2 sm:gap-3 md:gap-4 mb-3">
+            <div className="flex justify-center gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-5">
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -357,7 +352,7 @@ export default function OtpGeneration() {
             </div>
 
             {/* Progress dots */}
-            <div className="flex justify-center gap-1.5 mb-5">
+            <div className="flex justify-center gap-1.5 mb-4 sm:mb-5">
               {otp.map((_, i) => (
                 <div
                   key={i}
