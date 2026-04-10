@@ -116,9 +116,9 @@ export default function OtpGeneration() {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md z-50 p-4">
-      <div className="flex flex-col md:flex-row w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+      <div className="flex flex-col md:flex-row w-full max-w-4xl lg:max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden">
         {/* ── Left panel ── */}
-        <div className="hidden md:flex w-1/2 bg-gray-900 flex-col items-center justify-between p-10 relative overflow-hidden">
+        <div className="hidden md:flex w-[30%] lg:w-[28%] bg-gray-900 flex-col items-center justify-between p-10 relative overflow-hidden">
           <div
             className="absolute -top-16 -left-16 w-64 h-64 rounded-full"
             style={{ background: "rgba(0,119,182,0.1)" }}
@@ -208,7 +208,7 @@ export default function OtpGeneration() {
         </div>
 
         {/* ── Right panel ── */}
-        <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col justify-center bg-white">
+        <div className="w-full md:w-[70%] lg:w-[72%] p-8 md:p-10 flex flex-col justify-center bg-white">
           {/* Top nav */}
           <div className="flex justify-between items-center mb-8">
             <button
@@ -318,7 +318,7 @@ export default function OtpGeneration() {
                   onKeyDown={(e) => handleKeyDown(e, index)}
                   disabled={submitting}
                   // AFTER
-                  className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 text-center text-base sm:text-lg md:text-xl font-black rounded-xl sm:rounded-2xl border-2 focus:outline-none transition-all duration-200 disabled:opacity-60"
+                  className="w-9 h-10 sm:w-11 sm:h-12 md:w-13 md:h-14 lg:w-14 lg:h-14 text-center text-base sm:text-lg md:text-xl font-black rounded-xl sm:rounded-2xl border-2 focus:outline-none transition-all duration-200 disabled:opacity-60"
                   style={
                     digit
                       ? {
