@@ -1,9 +1,4 @@
 // src/pages/sell/SellPhones.jsx
-//
-// Landing page for the sell flow.
-// Fetches real brands from the API for the selected category.
-// Clicking a brand navigates to /sell/:category/:brand (SelectModel).
-//
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SellCard from "../components/SellCard";
@@ -14,37 +9,31 @@ import Footer from "../../Auth/components/Footer";
 import { getBrands } from "../../../services/deviceSell.api";
 import { useSellFlow } from "../../../context/sellflow.context";
 
-// Brand logo map — add more as needed
-const BRAND_LOGOS = {
-  Apple:   "../../../../assets/devicesicons/Apple.png",
-  Samsung: "../../../../assets/devicesicons/samsung.png",
-  Xiaomi:  "../../../../assets/devicesicons/Xiaomi.png",
-  Vivo:    "../../../../assets/devicesicons/Vivo.png",
-  Oppo:    "../../../../assets/devicesicons/Oppo.png",
-  OnePlus: "../../../../assets/devicesicons/OnePlus.png",
-  Realme:  "../../../../assets/devicesicons/realme-seeklogo.png",
-  Poco:    "../../../../assets/devicesicons/Poco.png",
-  Google:  "../../../../assets/devicesicons/Google.png",
-  Motorola:  "../../../../assets/devicesicons/Motorola.png",
-  Nokia:     "../../../../assets/devicesicons/Nokia.png",
-  Sony:      "../../../../assets/devicesicons/Sony.png",
-  Nothing :  "../../../../assets/devicesicons/Nothing.webp",
-};
-
-const CATEGORY = "mobile"; // change to "laptop" | "tablet" etc. per page
+const CATEGORY = "mobile";
 
 export default function SellPhones() {
   const navigate = useNavigate();
   const { setCategory, setSelectedBrand } = useSellFlow();
 
-  const [brands, setBrands]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const [brands, setBrands]       = useState([]);
+  const [brandLogos, setBrandLogos] = useState({});
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState(null);
 
   useEffect(() => {
     setCategory(CATEGORY);
     getBrands(CATEGORY)
-      .then((res) => setBrands(res.data))   // res.data = ["Apple", "Samsung", …]
+      .then((res) => {
+        // res.data is now [{ brand, logo }, ...]
+        const names = res.data.map((b) => b.brand);
+        const logos = Object.fromEntries(
+          res.data
+            .filter((b) => b.logo)
+            .map((b) => [b.brand, b.logo])
+        );
+        setBrands(names);
+        setBrandLogos(logos);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -56,17 +45,14 @@ export default function SellPhones() {
 
   return (
     <>
-
-      {/* ── Hero / search card ── */}
       <SellCard
         title="Sell Old Mobile Phone for Instant Cash"
         brands={brands}
-        brandLogos={BRAND_LOGOS}
-        brandsLoading ={loading}
+        brandLogos={brandLogos}
+        brandsLoading={loading}
         brandsError={error}
         onBrandClick={handleBrandClick}
       />
-
       <Feedback />
       <FAQ />
       <DownloadAppBanner />
