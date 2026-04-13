@@ -1,0 +1,141 @@
+/**
+ * @name userRegisterController
+ * @description Verify Firebase phone token, then create user
+ * @route POST /api/auth/register
+ * @access Public
+ */
+async function userRegisterController(req, res) {
+  try {
+    const { firebaseToken, firstname, lastname, email } = req.body;
+
+    if (!firebaseToken || !firstname || !lastname || !email) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // 1. Verify Firebase ID token
+    let decoded;
+    try {
+      decoded = await admin.auth().verifyIdToken(firebaseToken);
+    } catch {
+      return res.status(401).json({ message: "Invalid or expired Firebase token" });
+    }
+
+    const mobile = decoded.phone_number; // e.g. "+919876543210"
+    if (!mobile) {
+      return res.status(400).json({ message: "Phone number not found in token" });
+    }
+
+    // 2. Check duplicates
+    const [mobileExists, emailExists] = await Promise.all([
+      userModel.findOne({ mobile }).lean(),
+      userModel.findOne({ email }).lean(),
+    ]);
+
+    if (mobileExists) {
+      return res.status(422).json({ message: "User already exists with this mobile" });
+    }
+    if (emailExists) {
+      return res.status(422).json({ message: "User already exists with this email" });
+    }
+
+    // 3. Create user
+    const user = await userModel.create({
+      firstname,
+      lastname,
+      email,
+      mobile,
+      isVerified: true,
+    });
+
+    // 4. Generate tokens
+    const accessToken  = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    const userObj = user.toObject();
+    delete userObj.refreshToken;
+
+    res.status(201).json({
+      message: "User registered successfully",
+      accessToken,
+      user: userObj,
+    });
+  } catch (error) {
+    console.error("userRegisterController error:", error);
+    res.status(500).json({ message: "Registration failed. Please try again" });
+  }
+}
+
+
+// AFTER — replaces both
+
+/**
+ * @name userLoginController
+ * @description Verify Firebase phone token and login user
+ * @route POST /api/auth/login
+ * @access Public
+ */
+async function userLoginController(req, res) {
+  try {
+    const { firebaseToken } = req.body;
+
+    if (!firebaseToken) {
+      return res.status(400).json({ message: "Firebase token is required" });
+    }
+
+    // 1. Verify Firebase ID token
+    let decoded;
+    try {
+      decoded = await admin.auth().verifyIdToken(firebaseToken);
+    } catch {
+      return res.status(401).json({ message: "Invalid or expired Firebase token" });
+    }
+
+    const mobile = decoded.phone_number;
+    if (!mobile) {
+      return res.status(400).json({ message: "Phone number not found in token" });
+    }
+
+    // 2. Find user
+    const user = await userModel.findOne({ mobile });
+    if (!user) {
+      return res.status(404).json({
+        message: "No account found with this number",
+        code: "USER_NOT_FOUND",
+      });
+    }
+
+    // 3. Generate tokens
+    const accessToken  = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    const userObj = user.toObject();
+    delete userObj.refreshToken;
+
+    res.status(200).json({
+      message: "Login successful",
+      accessToken,
+      user: userObj,
+    });
+  } catch (error) {
+    console.error("userLoginController error:", error);
+    res.status(500).json({ message: "Login failed. Please try again" });
+  }
+}

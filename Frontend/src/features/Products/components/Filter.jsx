@@ -1,7 +1,20 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useProductContext } from "../../../context/product.context";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BackButton from "../../common/BackButton";
+import { useQuery } from "@tanstack/react-query";
+import { productKeys } from "../../../hooks/useProducts.query";
+import { getAllProducts } from "../../../services/product.api";
+
+function useDebounce(value, delay = 400) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+
+  return debounced;
+}
 
 function resolveFieldValue(device, key) {
   switch (key) {
@@ -1283,16 +1296,6 @@ export default function Filter({ data, category }) {
     devices: staticDevices = [],
     priceRange = { min: 0, max: 200000, step: 1000 },
   } = data || {};
-
-  const {
-    products,
-    pagination,
-    loading,
-    error,
-    fetchProducts,
-    updateFilter,
-    resetFilters,
-  } = useProductContext();
   const [searchParams] = useSearchParams();
 
   const initialFilters = () => {
@@ -1321,78 +1324,73 @@ export default function Filter({ data, category }) {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [mobileSortOpen, setMobileSortOpen] = useState(false);
   const [previewDevice, setPreviewDevice] = useState(null);
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebounce(searchQuery, 400);
 
   // ← ADD THIS: re-sync filters when URL search params change
   useEffect(() => {
     setActiveFilters(initialFilters());
   }, [searchParams.toString()]);
 
-  const buildParams = useCallback(
-    (overrides = {}) => {
-      const params = { category, status: "available", sortBy, limit: 20 };
-      if (priceMin > priceRange.min) params.minPrice = priceMin;
-      if (priceMax < priceRange.max) params.maxPrice = priceMax;
-      if (searchQuery) params.search = searchQuery;
-      for (const [key, vals] of Object.entries(activeFilters)) {
-        if (!vals.length) continue;
-        if (
-          [
-            "availability",
-            "specs.ram",
-            "specs.battery",
-            "specs.display",
-            "specs.refresh",
-            "specs.camera",
-            "specs.dispType",
-            "specs.resolution",
-          ].includes(key)
-        )
-          continue;
-        if (key === "deviceType") {
-          params.deviceType = vals[0].toLowerCase();
-          continue;
-        }
-        if (key === "condition") {
-          params.condition = vals[0];
-          continue;
-        }
-        if (key === "brand") {
-          params.brand = vals[0];
-          continue;
-        }
-        if (key === "storage") {
-          params.storage = vals[0];
-          continue;
-        }
-      }
-      return { ...params, ...overrides };
-    },
-    [
+  const apiFilters = useMemo(() => {
+    const params = {
       category,
+      status: "available",
       sortBy,
-      priceMin,
-      priceMax,
-      priceRange,
-      searchQuery,
-      activeFilters,
-    ],
-  );
+      limit: 20,
+      page,
+    };
 
-  const doFetch = useCallback(
-    (overrides = {}) => {
-      fetchProducts(buildParams(overrides));
-    },
-    [fetchProducts, buildParams],
-  );
+    if (priceMin > priceRange.min) params.minPrice = priceMin;
+    if (priceMax < priceRange.max) params.maxPrice = priceMax;
+    if (debouncedSearch) params.search = debouncedSearch;
 
-  useEffect(() => {
-    if (category) doFetch();
-  }, [category]);
-  useEffect(() => {
-    if (category) doFetch();
-  }, [sortBy]);
-  useEffect(() => { if (category) doFetch(); }, [searchParams.toString()]); // ← ADD THIS
+    for (const [key, vals] of Object.entries(activeFilters)) {
+      if (!vals.length) continue;
 
+      if (key === "deviceType") {
+        params.deviceType = vals[0].toLowerCase();
+        continue;
+      }
+      if (key === "condition") {
+        params.condition = vals[0];
+        continue;
+      }
+      if (key === "brand") {
+        params.brand = vals[0];
+        continue;
+      }
+      if (key === "storage") {
+        params.storage = vals[0];
+        continue;
+      }
+    }
+
+    return params;
+  }, [
+    category,
+    sortBy,
+    priceMin,
+    priceMax,
+    debouncedSearch,
+    activeFilters,
+    priceRange,
+    page,
+  ]);
+
+    const {
+    data: queryData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: productKeys.list(apiFilters),
+    queryFn: () => getAllProducts(apiFilters),
+    keepPreviousData: true,
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const products = queryData?.products ?? [];
+  const pagination = queryData?.pagination ?? {};
 
   const sourceDevices = products.length > 0 ? products : staticDevices;
 
@@ -1491,9 +1489,8 @@ export default function Filter({ data, category }) {
     });
   };
 
-  const handlePageChange = (page) => {
-    updateFilter({ page });
-    doFetch({ page });
+  const handlePageChange = (p) => {
+    setPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -1510,14 +1507,12 @@ export default function Filter({ data, category }) {
       className="min-h-screen pb-24 md:pb-0"
       style={{ backgroundColor: "#f5f5f5" }}
     >
-
       {previewDevice && (
         <PreviewModal
           device={previewDevice}
           onClose={() => setPreviewDevice(null)}
         />
       )}
-      
 
       {/* Mobile drawers */}
       <MobileFilterDrawer
@@ -1571,7 +1566,7 @@ export default function Filter({ data, category }) {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && doFetch()}
+            onKeyDown={(e) => e.key === "Enter"}
             placeholder={`Search ${pageTitle.toLowerCase()}…`}
             className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none transition-all"
             onFocus={(e) => {
@@ -1596,7 +1591,6 @@ export default function Filter({ data, category }) {
           <option value="discount">Best Discount</option>
         </select>
         <button
-          onClick={() => doFetch()}
           className="text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors"
           style={{ backgroundColor: "#0077b6" }}
           onMouseEnter={(e) =>
@@ -1681,7 +1675,7 @@ export default function Filter({ data, category }) {
                   d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              Backend unreachable — showing demo data. ({error})
+              Backend unreachable — showing demo data. ({error?.message})
             </div>
           )}
 
@@ -1739,7 +1733,7 @@ export default function Filter({ data, category }) {
             )}
           </div>
 
-          {loading ? (
+          {isLoading ? (
             <div className="flex flex-col gap-3">
               {[...Array(4)].map((_, i) => (
                 <SkeletonCard key={i} />

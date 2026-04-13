@@ -258,14 +258,33 @@ export default function SellCard({
                         key={brand}
                         onClick={() => onBrandClick?.(brand)}
                         title={brand}
-                        className="brand-card flex flex-col items-center gap-1.5 w-20 pt-3 pb-2.5 px-2.5 bg-white border-[1.5px] border-[#e8f4f8] rounded-2xl cursor-pointer transition-all duration-200 shadow-[0_2px_8px_rgba(0,119,182,0.05)]"
+                        className="group
+          flex flex-col items-center justify-center
+          w-[70px] sm:w-[80px] md:w-[90px]
+          pt-2.5 sm:pt-3 pb-2 px-2
+          bg-white border-[1.5px] border-[#e8f4f8]
+          rounded-xl sm:rounded-2xl
+          cursor-pointer transition-all duration-200
+          shadow-[0_2px_8px_rgba(0,119,182,0.05)]
+          hover:shadow-md hover:-translate-y-[1px]"
                       >
                         <LazyImage
                           src={logo}
                           alt={brand}
-                          className="w-10 h-8 sm:w-12 sm:h-9 md:w-14 md:h-10 object-contain transition-transform duration-200 group-hover:scale-105"
+                          className="w-10 h-10
+            sm:w-10 sm:h-7
+            md:w-14 md:h-10
+            lg:w-16 lg:h-12
+            object-contain
+            transition-transform duration-200
+            group-hover:scale-105"
                         />
-                        <span className="text-[11px] font-semibold text-[#03045e] text-center leading-tight">
+                        <span
+                          className="text-[12px] sm:text-[11px]
+          font-semibold text-[#03045e]
+          text-center leading-tight
+          line-clamp-2"
+                        >
                           {brand}
                         </span>
                       </button>
@@ -273,7 +292,12 @@ export default function SellCard({
                       <button
                         key={brand}
                         onClick={() => onBrandClick?.(brand)}
-                        className="px-4 py-1.5 rounded-full bg-white border-[1.5px] border-[#e2e8f0] text-[13px] font-semibold text-[#03045e] cursor-pointer transition-all duration-200 hover:bg-[#03045e] hover:border-[#03045e] hover:text-white"
+                        className="px-3 sm:px-4 py-1.5
+          rounded-full bg-white border-[1.5px] border-[#e2e8f0]
+          text-[12px] sm:text-[13px]
+          font-semibold text-[#03045e]
+          cursor-pointer transition-all duration-200
+          hover:bg-[#03045e] hover:border-[#03045e] hover:text-white"
                       >
                         {brand}
                       </button>
@@ -283,9 +307,16 @@ export default function SellCard({
                   {brands.length > VISIBLE_COUNT && (
                     <button
                       onClick={() => setShowAll((v) => !v)}
-                      className="flex flex-col items-center justify-center gap-1 w-20 pt-3 pb-2.5 px-2.5 rounded-2xl bg-transparent border-[1.5px] border-dashed border-[#00b4d8] text-[11px] font-bold text-[#0077b6] cursor-pointer transition-all duration-200 hover:bg-[#caf0f8]"
+                      className="flex flex-col items-center justify-center gap-1
+        w-[70px] sm:w-[80px] md:w-[90px]
+        pt-2.5 sm:pt-3 pb-2 px-2
+        rounded-xl sm:rounded-2xl
+        bg-transparent border-[1.5px] border-dashed border-[#00b4d8]
+        text-[10px] sm:text-[11px] font-bold text-[#0077b6]
+        cursor-pointer transition-all duration-200
+        hover:bg-[#caf0f8]"
                     >
-                      <span className="text-lg leading-none">
+                      <span className="text-base leading-none">
                         {showAll ? "↑" : "+"}
                       </span>
                       <span>
