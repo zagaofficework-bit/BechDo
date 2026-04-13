@@ -62,6 +62,7 @@ exports.getBrands = async (req, res) => {
       });
     }
     const brands = await DeviceCatalog.find({ category })
+      .select("brand logo")
       .select("brand")
       .lean();
     if (brands.length === 0) {
@@ -69,9 +70,11 @@ exports.getBrands = async (req, res) => {
         .status(404)
         .json({ message: `No brands found for category: ${category}` });
     }
-    res
-      .status(200)
-      .json({ success: true, category, data: brands.map((b) => b.brand) });
+    res.status(200).json({
+      success: true,
+      category,
+      data: brands.map((b) => ({ brand: b.brand, logo: b.logo || null })),
+    });
   } catch (error) {
     console.error("getBrands error:", error);
     res.status(500).json({ message: "Failed to fetch brands" });

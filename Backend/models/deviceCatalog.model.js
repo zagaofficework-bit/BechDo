@@ -32,6 +32,7 @@ const deviceCatalogSchema = new mongoose.Schema(
       enum: ["mobile", "laptop", "tablet", "smartwatch", "television"],
       required: true,
     },
+    logo:     { type: String, default: null },
     models: [deviceModelSchema],
   },
   { timestamps: true }
