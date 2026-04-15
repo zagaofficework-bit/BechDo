@@ -809,7 +809,7 @@ export default function ProfilePage() {
         firstname: user.firstname ?? "",
         lastname: user.lastname ?? "",
         email: user.email ?? "",
-        mobile: user.mobile ?? "",
+        mobile: user.mobile?.replace(/^\+91/, "").replace(/^91/, "") ?? "",
       });
     }
   }, [user]);
@@ -832,6 +832,13 @@ export default function ProfilePage() {
 
   const handleProfileSave = async () => {
     setProfileSaving(true);
+    const payload = {
+      ...profileForm,
+      mobile: profileForm.mobile
+        ?.replace(/^\+91/, "")
+        .replace(/^91/, "")
+        .replace(/\D/g, ""),
+    };
     if (profileForm.mobile && !/^[0-9]{10}$/.test(profileForm.mobile)) {
       showToast("Mobile number must be 10 digits", "error");
       setProfileSaving(false);
@@ -1155,16 +1162,34 @@ export default function ProfilePage() {
                   }
                   placeholder="john@example.com"
                 />
-                <Field
-                  label="Mobile Number"
-                  icon={I.phone}
-                  type="tel"
-                  value={profileForm.mobile}
-                  onChange={(e) =>
-                    setProfileForm((p) => ({ ...p, mobile: e.target.value }))
-                  }
-                  placeholder="+91 98765 43210"
-                />
+                {/* Mobile Number — replace the Field component for this field */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider">
+                    Mobile Number
+                  </label>
+                  <div className="flex items-center border border-slate-200 rounded-xl px-3 py-2.5 bg-slate-50 focus-within:border-[#1132d4] focus-within:bg-white transition-all">
+                    <span className="text-sm text-slate-500 font-medium mr-2 select-none">
+                      +91
+                    </span>
+                    <input
+                      type="tel"
+                      value={
+                        profileForm.mobile
+                          ?.replace(/^\+91/, "")
+                          .replace(/^91/, "") ?? ""
+                      }
+                      onChange={(e) => {
+                        const v = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 10);
+                        setProfileForm((p) => ({ ...p, mobile: v }));
+                      }}
+                      placeholder="9876543210"
+                      maxLength={10}
+                      className="flex-1 bg-transparent focus:outline-none text-sm text-slate-800 placeholder-slate-400 font-medium"
+                    />
+                  </div>
+                </div>
               </div>
               <div className="mt-5 pt-5 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
