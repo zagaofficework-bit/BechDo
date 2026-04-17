@@ -41,7 +41,6 @@ export const useAuth = () => {
   // OTP send karne ke baad timeout set karo
   const sendOtp = async (phone) => {
     setError(null);
-    setOtpSentTime(Date.now()); // Add this state
     setLoading(true);
 
     try {
@@ -52,14 +51,12 @@ export const useAuth = () => {
         window.recaptchaVerifier,
       );
 
-      // Auto-expire after 5 min
+      // Auto-expire (ye rakho)
       setTimeout(() => {
         confirmationRef.current = null;
-        setOtpSentTime(null);
         setError("OTP session expired");
       }, 300000);
 
-      setSuccessMessage("OTP sent successfully!");
       return { success: true };
     } catch (err) {
       cleanupRecaptcha();
