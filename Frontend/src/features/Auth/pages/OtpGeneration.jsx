@@ -96,7 +96,7 @@ export default function OtpGeneration() {
   const handleResend = async () => {
     if (resending || timer > 0) return; // 🚫 block early click
 
-    setOtp(["", "", "", ""]);
+    setOtp(["", "", "", "", "", ""]);
     setLocalErr("");
     clearError();
 
