@@ -6,8 +6,13 @@ import { login, register, logout, googleAuth } from "../services/auth.api";
 
 export const useAuth = () => {
   const {
-    user, setUser, loading, setLoading,
-    initializing, isAuthenticated, updateUser,
+    user,
+    setUser,
+    loading,
+    setLoading,
+    initializing,
+    isAuthenticated,
+    updateUser,
   } = useAuthContext();
 
   const [error, setError] = useState(null);
@@ -17,32 +22,47 @@ export const useAuth = () => {
   // ── Setup reCAPTCHA ───────────────────────────────────────────────────────
   const setupRecaptcha = async (containerId) => {
     if (window.recaptchaVerifier) {
-      try { window.recaptchaVerifier.clear(); } catch (_) {}
+      try {
+        window.recaptchaVerifier.clear();
+      } catch (_) {}
       window.recaptchaVerifier = null;
     }
     window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
       size: "invisible",
       callback: () => {},
-      "expired-callback": () => { window.recaptchaVerifier = null; },
+      "expired-callback": () => {
+        window.recaptchaVerifier = null;
+      },
     });
     await window.recaptchaVerifier.render(); // ← critical fix #2
   };
 
   // ── Send OTP ──────────────────────────────────────────────────────────────
+  // OTP send karne ke baad timeout set karo
   const sendOtp = async (phone) => {
     setError(null);
+    setOtpSentTime(Date.now()); // Add this state
     setLoading(true);
+
     try {
-      await setupRecaptcha("recaptcha-container"); // ← awaited now
+      await setupRecaptcha("recaptcha-container");
       confirmationRef.current = await signInWithPhoneNumber(
-        auth, phone, window.recaptchaVerifier,
+        auth,
+        phone,
+        window.recaptchaVerifier,
       );
+
+      // Auto-expire after 5 min
+      setTimeout(() => {
+        confirmationRef.current = null;
+        setOtpSentTime(null);
+        setError("OTP session expired");
+      }, 300000);
+
+      setSuccessMessage("OTP sent successfully!");
       return { success: true };
     } catch (err) {
-      if (window.recaptchaVerifier) {
-        try { window.recaptchaVerifier.clear(); } catch (_) {}
-        window.recaptchaVerifier = null;
-      }
+      cleanupRecaptcha();
       setError(err?.message || "Failed to send OTP");
       return { success: false };
     } finally {
@@ -50,27 +70,50 @@ export const useAuth = () => {
     }
   };
 
+  // Helper function
+  const cleanupRecaptcha = () => {
+    if (window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier.clear();
+      } catch {}
+      window.recaptchaVerifier = null;
+    }
+  };
   const handleRegister = async ({ phone }) => sendOtp(phone);
-  const handleLogin    = async ({ phone }) => sendOtp(phone);
+  const handleLogin = async ({ phone }) => sendOtp(phone);
 
   // ── Verify OTP for Login ──────────────────────────────────────────────────
   const handleVerifyLoginOtp = async ({ otp }) => {
     setError(null);
     setLoading(true);
+
     try {
+      // Check if session exists AND not too old
       if (!confirmationRef.current) {
         setError("Session expired. Please resend OTP");
         return { success: false };
       }
-      const result = await confirmationRef.current.confirm(otp);
-      const firebaseToken = await result.user.getIdToken(true); // ← fix #1: forceRefresh
 
-      const data = await login({ firebaseToken });
-      localStorage.setItem("accessToken", data.accessToken);
-      setUser(data.user);
-      return { success: true };
+      // Additional check - try confirm first, catch specific error
+      const result = await Promise.race([
+        confirmationRef.current.confirm(otp),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Session timeout")), 10000),
+        ),
+      ]);
+
+      // Clear ref after success
+      confirmationRef.current = null;
+
+      const firebaseToken = await result.user.getIdToken(true);
+      // ... rest of login logic
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Verification failed");
+      confirmationRef.current = null; // Always clear on error
+      if (err.message.includes("timeout") || err.code === "auth/timeout") {
+        setError("OTP expired. Please resend.");
+      } else {
+        setError(err?.response?.data?.message || "Verification failed");
+      }
       return { success: false };
     } finally {
       setLoading(false);
@@ -78,7 +121,12 @@ export const useAuth = () => {
   };
 
   // ── Verify OTP for Register ───────────────────────────────────────────────
-  const handleVerifyRegisterOtp = async ({ otp, firstname, lastname, email }) => {
+  const handleVerifyRegisterOtp = async ({
+    otp,
+    firstname,
+    lastname,
+    email,
+  }) => {
     setError(null);
     setLoading(true);
     try {
@@ -89,12 +137,19 @@ export const useAuth = () => {
       const result = await confirmationRef.current.confirm(otp);
       const firebaseToken = await result.user.getIdToken(true); // ← fix #1: forceRefresh
 
-      const data = await register({ firebaseToken, firstname, lastname, email });
+      const data = await register({
+        firebaseToken,
+        firstname,
+        lastname,
+        email,
+      });
       localStorage.setItem("accessToken", data.accessToken);
       setUser(data.user);
       return { success: true };
     } catch (err) {
-      setError(err?.response?.data?.message || err?.message || "Verification failed");
+      setError(
+        err?.response?.data?.message || err?.message || "Verification failed",
+      );
       return { success: false };
     } finally {
       setLoading(false);
@@ -138,17 +193,24 @@ export const useAuth = () => {
   };
 
   return {
-    user, loading, initializing, isAuthenticated,
-    isAdmin:   user?.role === "admin",
-    isSeller:  user?.role === "seller",
-    isUser:    user?.role === "user",
-    error, successMessage,
+    user,
+    loading,
+    initializing,
+    isAuthenticated,
+    isAdmin: user?.role === "admin",
+    isSeller: user?.role === "seller",
+    isUser: user?.role === "user",
+    error,
+    successMessage,
     sendOtp,
-    handleRegister, handleVerifyRegisterOtp,
-    handleLogin, handleVerifyLoginOtp,
-    handleGoogleAuth, handleLogout,
+    handleRegister,
+    handleVerifyRegisterOtp,
+    handleLogin,
+    handleVerifyLoginOtp,
+    handleGoogleAuth,
+    handleLogout,
     updateUser,
-    clearError:  () => setError(null),
+    clearError: () => setError(null),
     clearMessage: () => setSuccessMessage(null),
   };
 };

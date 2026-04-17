@@ -95,7 +95,7 @@ export default function OtpGeneration() {
 
   const handleResend = async () => {
     if (resending || timer > 0) return; // 🚫 block early click
-
+    setTimer(60); // 🔁 restart cooldown
     setOtp(["", "", "", "", "", ""]);
     setLocalErr("");
     clearError();
@@ -107,8 +107,6 @@ export default function OtpGeneration() {
       await handleRegister({ phone });
     }
     setResending(false);
-
-    setTimer(60); // 🔁 restart cooldown
     inputs.current[0]?.focus();
   };
 
