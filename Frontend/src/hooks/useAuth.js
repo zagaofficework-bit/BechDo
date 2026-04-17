@@ -85,31 +85,35 @@ export const useAuth = () => {
     setLoading(true);
 
     try {
-      // Check if session exists AND not too old
       if (!confirmationRef.current) {
         setError("Session expired. Please resend OTP");
         return { success: false };
       }
 
-      // Additional check - try confirm first, catch specific error
-      const result = await Promise.race([
-        confirmationRef.current.confirm(otp),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Session timeout")), 10000),
-        ),
-      ]);
-
-      // Clear ref after success
-      confirmationRef.current = null;
+      // Simple confirm - no race condition
+      const result = await confirmationRef.current.confirm(otp);
+      confirmationRef.current = null; // Clear immediately
 
       const firebaseToken = await result.user.getIdToken(true);
-      // ... rest of login logic
+
+      // ✅ COMPLETE LOGIN LOGIC ADD KIYA
+      const data = await login({ firebaseToken });
+      localStorage.setItem("accessToken", data.accessToken);
+      setUser(data.user);
+
+      return { success: true };
     } catch (err) {
-      confirmationRef.current = null; // Always clear on error
-      if (err.message.includes("timeout") || err.code === "auth/timeout") {
+      confirmationRef.current = null; // Always clear
+
+      // Better error handling
+      if (err.code === "auth/code-expired" || err.code === "auth/timeout") {
         setError("OTP expired. Please resend.");
+      } else if (err.code === "auth/invalid-verification-code") {
+        setError("Invalid OTP. Please check and try again.");
       } else {
-        setError(err?.response?.data?.message || "Verification failed");
+        setError(
+          err?.response?.data?.message || err?.message || "Verification failed",
+        );
       }
       return { success: false };
     } finally {
@@ -131,9 +135,11 @@ export const useAuth = () => {
         setError("Session expired. Please resend OTP");
         return { success: false };
       }
-      const result = await confirmationRef.current.confirm(otp);
-      const firebaseToken = await result.user.getIdToken(true); // ← fix #1: forceRefresh
 
+      const result = await confirmationRef.current.confirm(otp);
+      confirmationRef.current = null; // ✅ Clear here too
+
+      const firebaseToken = await result.user.getIdToken(true);
       const data = await register({
         firebaseToken,
         firstname,
@@ -144,6 +150,7 @@ export const useAuth = () => {
       setUser(data.user);
       return { success: true };
     } catch (err) {
+      confirmationRef.current = null;
       setError(
         err?.response?.data?.message || err?.message || "Verification failed",
       );
