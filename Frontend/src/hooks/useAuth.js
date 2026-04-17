@@ -20,8 +20,6 @@ export const useAuth = () => {
 
   const clearSessionToken = () => sessionStorage.removeItem("sessionToken");
 
-  // AFTER
-
 // AFTER
 const setupRecaptcha = (containerId) => {
   // Stale verifier clear karo — production mein domain change pe yeh fail karta hai
