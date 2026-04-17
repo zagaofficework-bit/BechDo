@@ -8,6 +8,8 @@ import DownloadAppBanner from "../../Auth/components/DownloadAppBanner";
 import Footer from "../../Auth/components/Footer";
 import { getBrands } from "../../../services/deviceSell.api";
 import { useSellFlow } from "../../../context/sellflow.context";
+import { useAuth } from "../../../hooks/useAuth";
+import SellerCannotSellPage from "./SellerCannotSellPage";
 
 const CATEGORY = "mobile";
 
@@ -19,6 +21,11 @@ export default function SellPhones() {
   const [brandLogos, setBrandLogos] = useState({});
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
+  const { user } = useAuth();
+
+  if (user?.role === "seller") {
+  return <SellerCannotSellPage />;
+}
 
   useEffect(() => {
     setCategory(CATEGORY);

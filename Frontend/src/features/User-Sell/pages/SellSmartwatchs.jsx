@@ -13,6 +13,8 @@ import DownloadAppBanner from "../../Auth/components/DownloadAppBanner";
 import Footer from "../../Auth/components/Footer";
 import { getBrands } from "../../../services/deviceSell.api";
 import { useSellFlow } from "../../../context/sellflow.context";
+import { useAuth } from "../../../hooks/useAuth";
+import SellerCannotSellPage from "./SellerCannotSellPage";
 
 // Brand logo map — add more as needed
 const BRAND_LOGOS = {
@@ -34,6 +36,11 @@ export default function SellSmartwatchs() {
   const [brands, setBrands]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
+    const { user } = useAuth();
+
+  if (user?.role === "seller") {
+  return <SellerCannotSellPage />;
+}
 
   useEffect(() => {
     setCategory(CATEGORY);
