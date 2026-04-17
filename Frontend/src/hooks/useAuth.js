@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useAuthContext } from "../context/auth.context";
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { auth } from "../config/firebase.config";
@@ -17,49 +17,48 @@ export const useAuth = () => {
 
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  const confirmationRef = useRef(null); // ← replaces window.confirmationResult
 
-  // ── Setup reCAPTCHA ───────────────────────────────────────────────────────
-  const setupRecaptcha = async (containerId) => {
-    if (window.recaptchaVerifier) {
-      try {
-        window.recaptchaVerifier.clear();
-      } catch (_) {}
+  const clearSessionToken = () => sessionStorage.removeItem("sessionToken");
+
+  // AFTER
+
+// AFTER
+const setupRecaptcha = (containerId) => {
+  // Stale verifier clear karo — production mein domain change pe yeh fail karta hai
+  if (window.recaptchaVerifier) {
+    try {
+      window.recaptchaVerifier.clear();
+    } catch (_) {}
+    window.recaptchaVerifier = null;
+  }
+  window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+    size: "invisible",
+    callback: () => {},
+    "expired-callback": () => {
       window.recaptchaVerifier = null;
-    }
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-      size: "invisible",
-      callback: () => {},
-      "expired-callback": () => {
-        window.recaptchaVerifier = null;
-      },
-    });
-    await window.recaptchaVerifier.render(); // ← critical fix #2
-  };
+    },
+  });
+};
 
-  // ── Send OTP ──────────────────────────────────────────────────────────────
-  // OTP send karne ke baad timeout set karo
+  // ── Send OTP via Firebase ────────────────────────────────────────────────
   const sendOtp = async (phone) => {
     setError(null);
     setLoading(true);
-
     try {
-      await setupRecaptcha("recaptcha-container");
-      confirmationRef.current = await signInWithPhoneNumber(
+      setupRecaptcha("recaptcha-container");
+      const confirmation = await signInWithPhoneNumber(
         auth,
-        phone,
+        phone, // must be E.164 e.g. "+919876543210"
         window.recaptchaVerifier,
       );
-
-      // Auto-expire (ye rakho)
-      setTimeout(() => {
-        confirmationRef.current = null;
-        setError("OTP session expired");
-      }, 300000);
-
+      window.confirmationResult = confirmation;
       return { success: true };
     } catch (err) {
-      cleanupRecaptcha();
+      // Reset recaptcha on error so user can retry
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
+      }
       setError(err?.message || "Failed to send OTP");
       return { success: false };
     } finally {
@@ -67,61 +66,11 @@ export const useAuth = () => {
     }
   };
 
-  // Helper function
-  const cleanupRecaptcha = () => {
-    if (window.recaptchaVerifier) {
-      try {
-        window.recaptchaVerifier.clear();
-      } catch {}
-      window.recaptchaVerifier = null;
-    }
-  };
-  const handleRegister = async ({ phone }) => sendOtp(phone);
-  const handleLogin = async ({ phone }) => sendOtp(phone);
-
-  // ── Verify OTP for Login ──────────────────────────────────────────────────
-  const handleVerifyLoginOtp = async ({ otp }) => {
-    setError(null);
-    setLoading(true);
-
-    try {
-      if (!confirmationRef.current) {
-        setError("Session expired. Please resend OTP");
-        return { success: false };
-      }
-
-      // Simple confirm - no race condition
-      const result = await confirmationRef.current.confirm(otp);
-      confirmationRef.current = null; // Clear immediately
-
-      const firebaseToken = await result.user.getIdToken(true);
-
-      // ✅ COMPLETE LOGIN LOGIC ADD KIYA
-      const data = await login({ firebaseToken });
-      localStorage.setItem("accessToken", data.accessToken);
-      setUser(data.user);
-
-      return { success: true };
-    } catch (err) {
-      confirmationRef.current = null; // Always clear
-
-      // Better error handling
-      if (err.code === "auth/code-expired" || err.code === "auth/timeout") {
-        setError("OTP expired. Please resend.");
-      } else if (err.code === "auth/invalid-verification-code") {
-        setError("Invalid OTP. Please check and try again.");
-      } else {
-        setError(
-          err?.response?.data?.message || err?.message || "Verification failed",
-        );
-      }
-      return { success: false };
-    } finally {
-      setLoading(false);
-    }
+  // ── REGISTER ─────────────────────────────────────────────────────────────
+  const handleRegister = async ({ phone }) => {
+    return sendOtp(phone);
   };
 
-  // ── Verify OTP for Register ───────────────────────────────────────────────
   const handleVerifyRegisterOtp = async ({
     otp,
     firstname,
@@ -131,15 +80,13 @@ export const useAuth = () => {
     setError(null);
     setLoading(true);
     try {
-      if (!confirmationRef.current) {
+      if (!window.confirmationResult) {
         setError("Session expired. Please resend OTP");
         return { success: false };
       }
+      const result = await window.confirmationResult.confirm(otp);
+      const firebaseToken = await result.user.getIdToken();
 
-      const result = await confirmationRef.current.confirm(otp);
-      confirmationRef.current = null; // ✅ Clear here too
-
-      const firebaseToken = await result.user.getIdToken(true);
       const data = await register({
         firebaseToken,
         firstname,
@@ -150,7 +97,6 @@ export const useAuth = () => {
       setUser(data.user);
       return { success: true };
     } catch (err) {
-      confirmationRef.current = null;
       setError(
         err?.response?.data?.message || err?.message || "Verification failed",
       );
@@ -160,7 +106,37 @@ export const useAuth = () => {
     }
   };
 
-  // ── Google Auth ───────────────────────────────────────────────────────────
+  // ── LOGIN ─────────────────────────────────────────────────────────────────
+  const handleLogin = async ({ phone }) => {
+    return sendOtp(phone);
+  };
+
+  const handleVerifyLoginOtp = async ({ otp }) => {
+    setError(null);
+    setLoading(true);
+    try {
+      if (!window.confirmationResult) {
+        setError("Session expired. Please resend OTP");
+        return { success: false };
+      }
+      const result = await window.confirmationResult.confirm(otp);
+      const firebaseToken = await result.user.getIdToken();
+
+      const data = await login({ firebaseToken });
+      localStorage.setItem("accessToken", data.accessToken);
+      setUser(data.user);
+      return { success: true };
+    } catch (err) {
+      setError(
+        err?.response?.data?.message || err?.message || "Verification failed",
+      );
+      return { success: false };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── GOOGLE AUTH ───────────────────────────────────────────────────────────
   const handleGoogleAuth = async (credential) => {
     setError(null);
     setLoading(true);
@@ -182,7 +158,7 @@ export const useAuth = () => {
     }
   };
 
-  // ── Logout ────────────────────────────────────────────────────────────────
+  // ── LOGOUT ────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
     setError(null);
     setLoading(true);
@@ -196,25 +172,19 @@ export const useAuth = () => {
     }
   };
 
+  const clearError = () => setError(null);
+  const clearMessage = () => setSuccessMessage(null);
+  
   return {
-    user,
-    loading,
-    initializing,
-    isAuthenticated,
+    user, loading, initializing, isAuthenticated,
     isAdmin: user?.role === "admin",
     isSeller: user?.role === "seller",
     isUser: user?.role === "user",
-    error,
-    successMessage,
+    error, successMessage,
     sendOtp,
-    handleRegister,
-    handleVerifyRegisterOtp,
-    handleLogin,
-    handleVerifyLoginOtp,
-    handleGoogleAuth,
-    handleLogout,
-    updateUser,
-    clearError: () => setError(null),
-    clearMessage: () => setSuccessMessage(null),
+    handleRegister, handleVerifyRegisterOtp,
+    handleLogin, handleVerifyLoginOtp,
+    handleGoogleAuth, handleLogout,
+    updateUser, clearError, clearMessage,
   };
 };
