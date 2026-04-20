@@ -83,3 +83,18 @@ export const reinstateSeller = (sellerId, note = "") =>
     method: "POST",
     body: JSON.stringify({ note }),
   });
+
+// GET /admin/deletion-requests?page=1&limit=20
+export const getDeletionRequests = (filters = {}) =>
+  request(`/admin/deletion-requests${buildQuery(filters)}`);
+
+// POST /admin/deletion-requests/:userId/approve
+export const approveDeletion = (userId) =>
+  request(`/admin/deletion-requests/${userId}/approve`, { method: "POST" });
+
+// POST /admin/deletion-requests/:userId/reject  — body: { note? }
+export const rejectDeletion = (userId, note = "") =>
+  request(`/admin/deletion-requests/${userId}/reject`, {
+    method: "POST",
+    body:   JSON.stringify({ note }),
+  });

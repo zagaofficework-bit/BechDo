@@ -12,6 +12,8 @@ import {
   updateAddress,
   deleteAddress,
   setDefaultAddress,
+  requestAccountDeletion,
+  cancelDeletionRequest,
 } from "../../../services/profile.api";
 import { getMyListings, cancelListing } from "../../../services/deviceSell.api";
 import PickupConfirmModal from "../../User-Sell/components/PickupConfirmModal";
@@ -794,6 +796,9 @@ export default function ProfilePage() {
   const [addrLoading, setAddrLoading] = useState(false);
   const [addrModal, setAddrModal] = useState(null);
   const [addrSaving, setAddrSaving] = useState(false);
+  const [deletionReason, setDeletionReason] = useState("");
+  const [deletionLoading, setDeletionLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const navigate = useNavigate();
 
@@ -942,6 +947,36 @@ export default function ProfilePage() {
     }
   };
 
+  const handleRequestDeletion = async () => {
+    setDeletionLoading(true);
+    try {
+      await requestAccountDeletion(deletionReason);
+      updateUser({ accountStatus: "deletion_requested" });
+      showToast(
+        "Deletion request submitted. Admin will review within 24-48 hours.",
+      );
+      setShowDeleteConfirm(false);
+      setDeletionReason("");
+    } catch (e) {
+      showToast(e.message, "error");
+    } finally {
+      setDeletionLoading(false);
+    }
+  };
+
+  const handleCancelDeletion = async () => {
+    setDeletionLoading(true);
+    try {
+      await cancelDeletionRequest();
+      updateUser({ accountStatus: "active" });
+      showToast("Deletion request cancelled. Account is active again.");
+    } catch (e) {
+      showToast(e.message, "error");
+    } finally {
+      setDeletionLoading(false);
+    }
+  };
+
   const firstName = user?.firstname ?? user?.firstName ?? "User";
   const lastName = user?.lastname ?? user?.lastName ?? "";
   const profilePic = user?.profilePic ?? null;
@@ -963,6 +998,7 @@ export default function ProfilePage() {
     },
     { id: "orders", label: "My Orders", icon: I.orders, roles: ["user"] },
     { id: "listings", label: "My Listings", icon: I.device, roles: ["user"] },
+    { id: "danger", label: "Account", icon: I.ban, roles: ["user", "seller"] },
   ];
   const TABS = ALL_TABS.filter((t) => t.roles.includes(role));
 
@@ -1356,6 +1392,132 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {tab === "danger" && (
+        <div className="fade-in">
+          {user?.accountStatus === "deletion_requested" ? (
+            /* ── Already requested ── */
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <Ic d={I.clock} className="w-5 h-5 text-amber-700" />
+                </div>
+                <div>
+                  <p
+                    className="font-extrabold text-amber-800"
+                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                  >
+                    Deletion Request Pending
+                  </p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Your account deletion request is under admin review. This
+                    may take 24–48 hours.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCancelDeletion}
+                disabled={deletionLoading}
+                className="w-full py-3 rounded-xl border border-amber-300 bg-white text-amber-700 text-sm font-bold hover:bg-amber-100 disabled:opacity-60 transition-all flex items-center justify-center gap-2"
+              >
+                {deletionLoading ? (
+                  <span className="w-4 h-4 border-2 border-amber-300 border-t-amber-700 rounded-full animate-spin" />
+                ) : (
+                  <Ic d={I.refresh} />
+                )}
+                {deletionLoading ? "Cancelling…" : "Cancel Deletion Request"}
+              </button>
+            </div>
+          ) : !showDeleteConfirm ? (
+            /* ── Normal state ── */
+            <Section
+              title="Account Settings"
+              subtitle="Manage account actions"
+              icon={I.ban}
+            >
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
+                  <p className="text-sm font-bold text-red-700 mb-1">
+                    Delete Account
+                  </p>
+                  <p className="text-xs text-red-600 mb-4 leading-relaxed">
+                    Permanently delete your account and all associated data.
+                    This action requires admin approval and cannot be undone.
+                  </p>
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-all shadow-[0_3px_12px_rgba(239,68,68,0.3)]"
+                  >
+                    <Ic d={I.trash} /> Request Account Deletion
+                  </button>
+                </div>
+              </div>
+            </Section>
+          ) : (
+            /* ── Confirm state ── */
+            <div className="bg-white border border-red-200 rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(239,68,68,0.1)]">
+              <div className="bg-red-500 px-6 py-4 flex items-center gap-3">
+                <Ic d={I.ban} className="w-5 h-5 text-white" />
+                <p
+                  className="font-extrabold text-white"
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                >
+                  Confirm Account Deletion
+                </p>
+              </div>
+              <div className="px-6 py-5 space-y-4">
+                <div className="bg-red-50 border border-red-100 rounded-xl p-4 space-y-2 text-xs text-red-700">
+                  <p className="font-bold">This will permanently:</p>
+                  <p>✕ Delete your profile and personal data</p>
+                  <p>✕ Remove all your saved addresses</p>
+                  <p>✕ Cancel all active listings</p>
+                  <p className="text-red-500 font-semibold pt-1 border-t border-red-200">
+                    Requires admin approval — you will receive a confirmation
+                    email.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                    Reason (optional)
+                  </label>
+                  <textarea
+                    value={deletionReason}
+                    onChange={(e) => setDeletionReason(e.target.value)}
+                    rows={3}
+                    placeholder="Tell us why you're leaving…"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-400/10 transition-all resize-none"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowDeleteConfirm(false);
+                      setDeletionReason("");
+                    }}
+                    className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-500 text-sm font-semibold hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRequestDeletion}
+                    disabled={deletionLoading}
+                    className="flex-1 py-3 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 disabled:opacity-60 transition-all flex items-center justify-center gap-2"
+                  >
+                    {deletionLoading ? (
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Ic d={I.trash} />
+                    )}
+                    {deletionLoading
+                      ? "Submitting…"
+                      : "Submit Deletion Request"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {addrModal && (
         <AddressModal

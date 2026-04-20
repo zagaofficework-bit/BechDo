@@ -19,18 +19,18 @@ import SellerCannotSellPage from "./SellerCannotSellPage";
 // Brand logo map — add more as needed
 const BRAND_LOGOS = {
   Apple:
-    "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg",
+    "../../../../assets/devicesicons/Apple.png",
   Samsung:
-    "https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg",
-  Xiaomi: "https://upload.wikimedia.org/wikipedia/commons/2/29/Xiaomi_logo.svg",
-  Vivo: "https://upload.wikimedia.org/wikipedia/commons/9/9a/Vivo_logo_2019.svg",
-  Oppo: "https://upload.wikimedia.org/wikipedia/commons/9/9e/OPPO_LOGO_2019.svg",
+    "../../../../assets/devicesicons/samsung.png",
+  Xiaomi: "../../../../assets/devicesicons/Xiaomi.png",
+  Vivo: "../../../../assets/devicesicons/Vivo.png",
+  Oppo: "../../../../assets/devicesicons/Oppo.png",
   OnePlus:
-    "https://upload.wikimedia.org/wikipedia/commons/4/4e/OnePlus_logo.svg",
-  Realme: "https://upload.wikimedia.org/wikipedia/commons/9/9b/Realme_logo.svg",
+    "../../../../assets/devicesicons/OnePlus.png",
+  Realme: "../../../../assets/devicesicons/realme-seeklogo.png",
 };
 
-const CATEGORY = "television"; // change to "laptop" | "tablet" etc. per page
+const CATEGORY = "television";
 
 export default function SellTelevisions() {
   const navigate = useNavigate();

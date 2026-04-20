@@ -39,6 +39,17 @@ export const updateProfilePic = (file) => {
 };
 export const deleteProfilePic = () => request("/profile/picture", { method: "DELETE" });
 
+// DELETE /profile/account  — body: { reason? }
+export const requestAccountDeletion = (reason = "") =>
+  request("/profile/account", {
+    method:  "DELETE",
+    body:    JSON.stringify({ reason }),
+  });
+
+// POST /profile/account/cancel-deletion
+export const cancelDeletionRequest = () =>
+  request("/profile/account/cancel-deletion", { method: "POST" });
+
 // ─── ADDRESSES ────────────────────────────────────────────────────────────────
 export const getAddresses      = ()          => request("/profile/address");
 export const addAddress        = (body)      => request("/profile/address", { method: "POST", body: JSON.stringify(body) });
