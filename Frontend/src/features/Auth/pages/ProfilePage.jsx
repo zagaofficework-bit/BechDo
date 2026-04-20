@@ -1391,9 +1391,8 @@ export default function ProfilePage() {
             </Section>
           </div>
         )}
-      </div>
 
-      {tab === "danger" && (
+        {tab === "danger" && (
         <div className="fade-in">
           {user?.accountStatus === "deletion_requested" ? (
             /* ── Already requested ── */
@@ -1518,6 +1517,7 @@ export default function ProfilePage() {
           )}
         </div>
       )}
+      </div>    
 
       {addrModal && (
         <AddressModal
