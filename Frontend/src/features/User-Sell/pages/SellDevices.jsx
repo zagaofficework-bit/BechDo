@@ -54,6 +54,15 @@ export default function SellDevices({
     return () => clearTimeout(t);
   }, [query]);
 
+  // Prepend brand if the model name doesn't already start with it
+  const displayName = (modelName) => {
+    if (!modelName || !brand) return modelName;
+    const b = brand.trim();
+    return modelName.toLowerCase().startsWith(b.toLowerCase())
+      ? modelName
+      : `${b} ${modelName}`;
+  };
+
   const handleSelect = (model) => {
     if (!model?.id || !model?.name) {
       toast.error("Invalid model selected");
@@ -61,7 +70,7 @@ export default function SellDevices({
     }
     setSelectedModel({
       id: model.id,
-      name: model.name,
+      name: displayName(model.name),
       image: model.image,
       soldCount: model.soldCount,
     });
@@ -71,9 +80,9 @@ export default function SellDevices({
   const filtered = useMemo(() => {
     if (!Array.isArray(models)) return [];
     return models.filter((m) =>
-      m?.name?.toLowerCase().includes(query.toLowerCase()),
+      displayName(m?.name)?.toLowerCase().includes(query.toLowerCase()),
     );
-  }, [models, query]);
+  }, [models, query, brand]);
 
   return (
     <>
@@ -147,7 +156,7 @@ export default function SellDevices({
                     )}
                   </div>
                   <p className="text-sm font-medium text-gray-700 text-center">
-                    {model.name}
+                    {displayName(model.name)}
                   </p>
                   {model.soldCount > 0 && (
                     <p className="text-xs text-teal-600 mt-1">
