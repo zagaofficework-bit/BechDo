@@ -39,12 +39,8 @@ const values = [
 ];
 
 const team = [
-  { name: "Rohan Kapoor",  role: "Co-Founder & CEO",      avatar: "RK", color: "bg-teal-500"   },
-  { name: "Sneha Sharma",  role: "Co-Founder & CTO",      avatar: "SS", color: "bg-violet-500" },
-  { name: "Arjun Nair",    role: "Head of Operations",    avatar: "AN", color: "bg-amber-500"  },
-  { name: "Priya Mehta",   role: "Head of Customer Care", avatar: "PM", color: "bg-rose-500"   },
-  { name: "Rahul Gupta",   role: "Head of Quality",       avatar: "RG", color: "bg-indigo-500" },
-  { name: "Kavya Reddy",   role: "Lead Product Designer", avatar: "KR", color: "bg-emerald-500"},
+  { name: "Sahil Khan",  role: "Co-Founder & CEO",      avatar: "SK", color: "bg-teal-500"   },
+  { name: "Ram Muduli",  role: "Co-Founder & CTO",      avatar: "RM", color: "bg-violet-500" },
 ];
 
 const milestones = [
@@ -111,7 +107,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             <div className="space-y-4 text-sm text-gray-600 leading-relaxed">
               <p>
-                It started in 2019 when our founders <span className="font-bold text-gray-900">Rohan</span> and <span className="font-bold text-gray-900">Sneha</span> noticed something frustrating — millions of Indians wanted iPhones and Samsung flagships but couldn't justify spending ₹1 lakh+.
+                It started in 2026 when our founders <span className="font-bold text-gray-900">Sahil</span> and <span className="font-bold text-gray-900">Ram</span> noticed something frustrating — millions of Indians wanted iPhones and Samsung flagships but couldn't justify spending ₹1 lakh+.
               </p>
               <p>
                 Meanwhile, thousands of perfectly good devices were being discarded or exported. The gap was obvious. The solution was Phonify.

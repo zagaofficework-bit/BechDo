@@ -36,6 +36,7 @@ import Blog from "./features/common/Blog";
 import Support from "./features/common/Support";
 import NearbyDevicesPage from "./features/Auth/pages/NearbyDevicesPage";
 import { RouteErrorBoundary } from "./features/common/ErrorBoundary";
+import SellLoginRequired from "./features/User-Sell/pages/SellLoginRequired";
 
 // ─── Lazy-loaded pages ─────────────────────────────────────────────────────────
 const Home = lazy(() => import("./features/Auth/pages/Home"));
@@ -395,6 +396,7 @@ export default function App() {
                                 path="final-price"
                                 element={<FinalPrice />}
                               />
+                              <Route path="/login-required" element={<SellLoginRequired />} />
                               <Route path="success" element={<SellSuccess />} />
                               <Route
                                 path=":category/:brand"

@@ -9,6 +9,20 @@ import toast from "react-hot-toast";
 const BLUE      = "#0077b6";
 const BLUE_DARK = "#005f8f";
 
+// deviceSell.api.js throws: new Error(data.message)
+// so err.message = "Access token missing or malformed"
+const isAuthError = (err) => {
+  const msg = (err?.message || "").toLowerCase();
+  return (
+    msg.includes("access token") ||
+    msg.includes("unauthorized") ||
+    msg.includes("not authenticated") ||
+    msg.includes("jwt") ||
+    msg.includes("no token") ||
+    msg.includes("missing or malformed")
+  );
+};
+
 export default function FinalPrice() {
   const navigate = useNavigate();
   const { category, selectedModel, selectedVariant, answers, defectKeys, accessoryKeys, priceData, setPriceData, resetFlow } = useSellFlow();
@@ -26,7 +40,10 @@ export default function FinalPrice() {
   useEffect(() => {
     calculatePrice({ modelId: selectedModel.id, variantId: selectedVariant.id, category, answers, defectKeys, accessoryKeys })
       .then((res) => setPriceData(res.data))
-      .catch((err) => setError(err.message))
+      .catch((err) => {
+        if (isAuthError(err)) { navigate("/sell/login-required", { replace: true }); return; }
+        setError(err.message);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -38,6 +55,7 @@ export default function FinalPrice() {
       resetFlow();
       navigate("/sell/success", { state: { listing: res.data } });
     } catch (err) {
+      if (isAuthError(err)) { navigate("/sell/login-required", { replace: true }); return; }
       setError(err.message);
       toast.error(err.message || "Submission failed. Please try again.");
       setSubmitting(false);
