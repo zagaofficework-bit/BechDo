@@ -985,7 +985,7 @@ const DeviceListingCard = memo(
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {listing.evaluation.accessoryKeys.map((key, i) => {
-                      const ACCESSORY_LABELS = { original_charger: "Original Charger", original_box: "Original Box", earphones: "Earphones", back_cover: "Back Cover", screen_guard: "Screen Guard", bill: "Bill / Invoice", warranty_card: "Warranty Card", data_cable: "Data Cable", adapter: "Adapter", sim_ejector: "SIM Ejector" };
+                      const ACCESSORY_LABELS = { earphones: "Earphones", back_cover: "Back Cover", screen_guard: "Screen Guard", bill: "Bill / Invoice", warranty_card: "Warranty Card", data_cable: "Data Cable", adapter: "Adapter", sim_ejector: "SIM Ejector" };
                       return <span key={i} className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full capitalize"><span className="text-emerald-500 text-[10px] font-bold">✓</span>{ACCESSORY_LABELS[key] ?? key.replace(/_/g, " ")}</span>;
                     })}
                   </div>
