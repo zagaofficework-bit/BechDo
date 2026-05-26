@@ -106,60 +106,28 @@ export default function GoogleAuthButton({
    * Fallback: manually open Google OAuth popup.
    * Used when One Tap is suppressed (e.g. user dismissed it previously).
    */
-  const triggerPopupFlow = () => {
-    if (!GOOGLE_CLIENT_ID) return;
+const triggerPopupFlow = () => {
+  if (!GOOGLE_CLIENT_ID) return;
 
-    const params = new URLSearchParams({
-      client_id: GOOGLE_CLIENT_ID,
-      redirect_uri: `${window.location.origin}/auth/google/callback`,
-      response_type: "token id_token",
-      scope: "openid email profile",
-      nonce: Math.random().toString(36).slice(2),
-      prompt: "select_account",
-    });
-
-    const width = 500;
-    const height = 600;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-
-    const popup = window.open(
-      `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
-      "google-auth",
-      `width=${width},height=${height},left=${left},top=${top},toolbar=0,menubar=0,location=0`
-    );
-
-    if (!popup) {
-      onError?.(
-        "Popup was blocked. Please allow popups for this site and try again."
-      );
-      return;
-    }
-
-    // Listen for the OAuth callback message from the popup
-    const handleMessage = (event) => {
-      if (event.origin !== window.location.origin) return;
-      if (event.data?.type === "GOOGLE_AUTH_CREDENTIAL") {
-        window.removeEventListener("message", handleMessage);
-        popup.close();
-        if (event.data.credential) {
-          onSuccess?.(event.data.credential);
-        } else {
-          onError?.("Google sign-in failed. Please try again.");
-        }
+  const tokenClient = window.google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: "openid email profile",
+    callback: async (tokenResponse) => {
+      if (tokenResponse.error) {
+        onError?.("Google sign-in failed. Please try again.");
+        return;
       }
-    };
 
-    window.addEventListener("message", handleMessage);
+      // Exchange access_token for id_token via Google's userinfo
+      // OR: re-verify via your backend using access_token
+      // Best: use the id_token from One Tap, not this flow
+      // So instead — prompt One Tap again with hint
+      onError?.("Please try signing in again.");
+    },
+  });
 
-    // Cleanup if user closes popup manually
-    const checkClosed = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkClosed);
-        window.removeEventListener("message", handleMessage);
-      }
-    }, 500);
-  };
+  tokenClient.requestAccessToken({ prompt: "select_account" });
+};
 
   const isDisabled = disabled || loading || !scriptLoaded;
 

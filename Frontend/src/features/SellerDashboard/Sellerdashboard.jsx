@@ -912,7 +912,7 @@ const DeviceListingCard = memo(
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {listing.evaluation?.hasOriginalCharger && <span className="text-xs bg-blue-50 text-[#1132d4] border border-blue-100 px-2 py-0.5 rounded-full">🔌 Charger</span>}
-                  {listing.evaluation?.hasOriginalBox && <span className="text-xs bg-blue-50 text-[#1132d4] border border-blue-100 px-2 py-0.5 rounded-full">📦 Box</span>}
+                  {listing.evaluation?.has    Box && <span className="text-xs bg-blue-50 text-[#1132d4] border border-blue-100 px-2 py-0.5 rounded-full">📦 Box</span>}
                   {hasDefects && <span className="text-xs bg-red-50 text-red-600 border border-red-100 px-2 py-0.5 rounded-full">⚠ {listing.evaluation.defects.length} defect{listing.evaluation.defects.length > 1 ? "s" : ""}</span>}
                 </div>
               </div>
