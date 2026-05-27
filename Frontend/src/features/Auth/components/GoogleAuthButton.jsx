@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "../../../config/firebase.config";
+import { auth } from "../../config/firebase.config";
 
 //const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
