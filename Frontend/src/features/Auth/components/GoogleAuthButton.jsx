@@ -1,19 +1,3 @@
-/**
- * GoogleAuthButton.jsx
- *
- * Reusable Google Sign-In button using Google's GSI (Identity Services) library.
- * Renders a styled custom button that triggers Google's credential callback.
- *
- * Usage:
- *   <GoogleAuthButton onSuccess={handleGoogleAuth} onError={setError} />
- *
- * Props:
- *   onSuccess(credential: string) — called with the Google ID token on success
- *   onError(message: string)      — called with a human-readable error message
- *   label                         — button text (default: "Continue with Google")
- *   disabled                      — disables the button
- */
-
 import React, { useEffect, useRef, useState } from "react";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -44,6 +28,10 @@ export default function GoogleAuthButton({
       onError?.("Failed to load Google Sign-In. Please refresh and try again.");
     };
     document.head.appendChild(script);
+
+    return () => {
+      // Don't remove the script — other components may share it
+    };
   }, []);
 
   // Initialize Google Identity Services once script is loaded
@@ -61,13 +49,12 @@ export default function GoogleAuthButton({
       callback: handleCredentialResponse,
       auto_select: false,
       cancel_on_tap_outside: true,
-      use_fedcm_for_prompt: false,
     });
 
     initialized.current = true;
   }, [scriptLoaded]);
 
-  const handleCredentialResponse = (response) => {
+  const handleCredentialResponse = async (response) => {
     if (!response?.credential) {
       onError?.("No credential received from Google.");
       return;
@@ -86,25 +73,76 @@ export default function GoogleAuthButton({
 
     setLoading(true);
 
-    // Cancel any previous prompt state, then re-prompt
-    window.google.accounts.id.cancel();
-
+    // Prompt the One Tap / popup flow
     window.google.accounts.id.prompt((notification) => {
       if (
         notification.isNotDisplayed() ||
         notification.isSkippedMoment()
       ) {
+        // One Tap was suppressed — fall back to the popup flow
         setLoading(false);
-        const reason =
-          notification.getNotDisplayedReason?.() ||
-          notification.getSkippedReason?.() ||
-          "unknown";
-        console.warn("[GoogleAuthButton] Prompt suppressed:", reason);
-        onError?.(
-          "Google Sign-In popup was blocked. Please allow popups for this site and try again, or use Chrome/Edge."
-        );
+        triggerPopupFlow();
       }
     });
+  };
+
+  /**
+   * Fallback: manually open Google OAuth popup.
+   * Used when One Tap is suppressed (e.g. user dismissed it previously).
+   */
+  const triggerPopupFlow = () => {
+    if (!GOOGLE_CLIENT_ID) return;
+
+    const params = new URLSearchParams({
+      client_id: GOOGLE_CLIENT_ID,
+      redirect_uri: `${window.location.origin}/auth/google/callback`,
+      response_type: "token id_token",
+      scope: "openid email profile",
+      nonce: Math.random().toString(36).slice(2),
+      prompt: "select_account",
+    });
+
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+
+    const popup = window.open(
+      `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
+      "google-auth",
+      `width=${width},height=${height},left=${left},top=${top},toolbar=0,menubar=0,location=0`
+    );
+
+    if (!popup) {
+      onError?.(
+        "Popup was blocked. Please allow popups for this site and try again."
+      );
+      return;
+    }
+
+    // Listen for the OAuth callback message from the popup
+    const handleMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === "GOOGLE_AUTH_CREDENTIAL") {
+        window.removeEventListener("message", handleMessage);
+        popup.close();
+        if (event.data.credential) {
+          onSuccess?.(event.data.credential);
+        } else {
+          onError?.("Google sign-in failed. Please try again.");
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    // Cleanup if user closes popup manually
+    const checkClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkClosed);
+        window.removeEventListener("message", handleMessage);
+      }
+    }, 500);
   };
 
   const isDisabled = disabled || loading || !scriptLoaded;
