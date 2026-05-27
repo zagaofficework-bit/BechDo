@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { auth } from "../../../config/firebase.config";
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+//const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function GoogleAuthButton({
   onSuccess,
@@ -90,60 +92,20 @@ export default function GoogleAuthButton({
    * Fallback: manually open Google OAuth popup.
    * Used when One Tap is suppressed (e.g. user dismissed it previously).
    */
-  const triggerPopupFlow = () => {
-    if (!GOOGLE_CLIENT_ID) return;
-
-    const params = new URLSearchParams({
-      client_id: GOOGLE_CLIENT_ID,
-      redirect_uri: `${window.location.origin}/auth/google/callback`,
-      response_type: "token id_token",
-      scope: "openid email profile",
-      nonce: Math.random().toString(36).slice(2),
-      prompt: "select_account",
-    });
-
-    const width = 500;
-    const height = 600;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-
-    const popup = window.open(
-      `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
-      "google-auth",
-      `width=${width},height=${height},left=${left},top=${top},toolbar=0,menubar=0,location=0`
-    );
-
-    if (!popup) {
-      onError?.(
-        "Popup was blocked. Please allow popups for this site and try again."
-      );
-      return;
-    }
-
-    // Listen for the OAuth callback message from the popup
-    const handleMessage = (event) => {
-      if (event.origin !== window.location.origin) return;
-      if (event.data?.type === "GOOGLE_AUTH_CREDENTIAL") {
-        window.removeEventListener("message", handleMessage);
-        popup.close();
-        if (event.data.credential) {
-          onSuccess?.(event.data.credential);
-        } else {
-          onError?.("Google sign-in failed. Please try again.");
-        }
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-
-    // Cleanup if user closes popup manually
-    const checkClosed = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkClosed);
-        window.removeEventListener("message", handleMessage);
-      }
-    }, 500);
-  };
+  const triggerPopupFlow = async () => {
+  try {
+    setLoading(true);
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const idToken = await result.user.getIdToken();
+    onSuccess?.(idToken);
+  } catch (err) {
+    console.error("[GoogleAuthButton] Firebase popup error:", err);
+    onError?.("Google sign-in failed. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const isDisabled = disabled || loading || !scriptLoaded;
 
