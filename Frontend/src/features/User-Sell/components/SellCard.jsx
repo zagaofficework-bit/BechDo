@@ -368,45 +368,9 @@ export default function SellCard({
               <LazyImage
                 src="/images/Phonify-banner.png"
                 alt="Sell your phone"
-                onError={(e) => {
-                  e.target.style.display = "none";
-                  const sib = e.target.nextSibling;
-                  if (sib) sib.style.display = "flex";
-                }}
+                fallback="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgODAgMTIwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHg9IjgiIHk9IjIiIHdpZHRoPSI2NCIgaGVpZ2h0PSIxMTYiIHJ4PSIxNCIgZmlsbD0iI2U4ZjRmOCIgc3Ryb2tlPSIjMDBiNGQ4IiBzdHJva2VXaWR0aD0iMiIvPjxyZWN0IHg9IjE4IiB5PSIxNCIgd2lkdGg9IjQ0IiBoZWlnaHQ9IjcyIiByeD0iNCIgZmlsbD0id2hpdGUiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjEwNCIgcj0iNSIgZmlsbD0iIzVhYjNkOCIvPjwvc3ZnPg=="
               />
-              <div
-                style={{
-                  display: "none",
-                  width: 160,
-                  height: 200,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexDirection: "column",
-                  gap: 8,
-                }}
-              >
-                <svg width="80" height="120" viewBox="0 0 80 120" fill="none">
-                  <rect
-                    x="8"
-                    y="2"
-                    width="64"
-                    height="116"
-                    rx="14"
-                    fill="#e8f4f8"
-                    stroke="#00b4d8"
-                    strokeWidth="2"
-                  />
-                  <rect
-                    x="18"
-                    y="14"
-                    width="44"
-                    height="72"
-                    rx="4"
-                    fill="white"
-                  />
-                  <circle cx="40" cy="104" r="5" fill="#5ab3d8" />
-                </svg>
-              </div>
+
               <div className="w-full rounded-xl px-4 py-2.5 text-center bg-gradient-to-br from-[#03045e] to-[#0077b6] text-white">
                 <div className="text-[10px] opacity-75 tracking-[0.05em] uppercase font-medium">
                   Estimated value
