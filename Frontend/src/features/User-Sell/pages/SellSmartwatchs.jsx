@@ -33,22 +33,30 @@ export default function SellSmartwatchs() {
   const navigate = useNavigate();
   const { setCategory, setSelectedBrand } = useSellFlow();
 
-  const [brands, setBrands]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const [brands, setBrands]       = useState([]);
+const [brandLogos, setBrandLogos] = useState({});
+const [loading, setLoading]     = useState(true);
+const [error, setError]         = useState(null);
     const { user } = useAuth();
 
   if (user?.role === "seller") {
   return <SellerCannotSellPage />;
 }
 
-  useEffect(() => {
-    setCategory(CATEGORY);
-    getBrands(CATEGORY)
-      .then((res) => setBrands(res.data))   // res.data = ["Apple", "Samsung", …]
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
+useEffect(() => {
+  setCategory(CATEGORY);
+  getBrands(CATEGORY)
+    .then((res) => {
+      const names = res.data.map((b) => b.brand);
+      const logos = Object.fromEntries(
+        res.data.filter((b) => b.logo).map((b) => [b.brand, b.logo])
+      );
+      setBrands(names);
+      setBrandLogos(logos);
+    })
+    .catch((err) => setError(err.message))
+    .finally(() => setLoading(false));
+}, []);
 
   const handleBrandClick = (brand) => {
     setSelectedBrand(brand);
@@ -59,13 +67,13 @@ export default function SellSmartwatchs() {
     <>
 
       {/* ── Hero / search card ── */}
-      <SellCard
-        title="Sell Old SmartWatch for Instant Cash"
-        brands={brands}
-        brandsLoading={loading}
-        brandsError={error}
-        onBrandClick={handleBrandClick}
-      />
+        <SellCard
+          title="Sell Old SmartWatch for Instant Cash"
+          brands={brands}
+          brandsLoading={loading}
+          brandsError={error}
+          onBrandClick={handleBrandClick}
+        />
 
       <Feedback />
       <FAQ />
