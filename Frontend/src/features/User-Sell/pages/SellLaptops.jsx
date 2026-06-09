@@ -18,13 +18,13 @@ import SellerCannotSellPage from "./SellerCannotSellPage";
 
 // Brand logo map — add more as needed
 const BRAND_LOGOS = {
-  Apple:   "./assets/img/AppleLogo.png",
+  Apple: "./assets/img/AppleLogo.png",
   Samsung: "./assets/img/SamsungLogo.png",
-  Xiaomi:  "./assets/img/XiaomiLogo.png",
-  Vivo:    "./assets/img/VivoLogo.png",
-  Oppo:    "./assets/img/OppoLogo.png",
+  Xiaomi: "./assets/img/XiaomiLogo.png",
+  Vivo: "./assets/img/VivoLogo.png",
+  Oppo: "./assets/img/OppoLogo.png",
   OnePlus: "./assets/img/OnePlusLogo.png",
-  Realme:  "./assets/img/RealmeLogo.png",
+  Realme: "./assets/img/RealmeLogo.png",
 };
 
 const CATEGORY = "laptop"; // change to "laptop" | "tablet" etc. per page
@@ -32,20 +32,27 @@ const CATEGORY = "laptop"; // change to "laptop" | "tablet" etc. per page
 export default function SellLaptops() {
   const navigate = useNavigate();
   const { setCategory, setSelectedBrand } = useSellFlow();
-
-  const [brands, setBrands]   = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [brandLogos, setBrandLogos] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
-    const { user } = useAuth();
-  
-    if (user?.role === "seller") {
+  const [error, setError] = useState(null);
+  const { user } = useAuth();
+
+  if (user?.role === "seller") {
     return <SellerCannotSellPage />;
   }
 
   useEffect(() => {
     setCategory(CATEGORY);
     getBrands(CATEGORY)
-      .then((res) => setBrands(res.data))   // res.data = ["Apple", "Samsung", …]
+      .then((res) => {
+        const names = res.data.map((b) => b.brand);
+        const logos = Object.fromEntries(
+          res.data.filter((b) => b.logo).map((b) => [b.brand, b.logo]),
+        );
+        setBrands(names);
+        setBrandLogos(logos);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -57,11 +64,11 @@ export default function SellLaptops() {
 
   return (
     <>
-
       {/* ── Hero / search card ── */}
       <SellCard
         title="Sell Old Laptop for Instant Cash"
         brands={brands}
+        brandLogos={brandLogos}
         brandsLoading={loading}
         brandsError={error}
         onBrandClick={handleBrandClick}
