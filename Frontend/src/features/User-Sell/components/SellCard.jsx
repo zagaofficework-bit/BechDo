@@ -370,7 +370,8 @@ export default function SellCard({
                 alt="Sell your phone"
                 onError={(e) => {
                   e.target.style.display = "none";
-                  e.target.nextSibling.style.display = "flex";
+                  const sib = e.target.nextSibling;
+                  if (sib) sib.style.display = "flex";
                 }}
               />
               <div
