@@ -983,7 +983,7 @@ export default function AdminDashboard() {
       icon: "🗑",
       badge: deletionRequests.length,
     },
-    { id: "catalog", label: "Catalog", icon: "☷" },
+    { id: "catalog", label: "Catalog", icon: "☷", path: "/admin/catalog-manager"},
   ];
 
   return (
@@ -1061,6 +1061,7 @@ export default function AdminDashboard() {
                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                 }`}
               >
+                
                 <div className="flex items-center gap-2.5">
                   <span className="text-base">{item.icon}</span>
                   {item.label}
