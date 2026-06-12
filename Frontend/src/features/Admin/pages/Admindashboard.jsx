@@ -18,6 +18,7 @@ import {
   approveDeletion,
   rejectDeletion,
 } from "../../../services/admin.api";
+import CatalogManager from "../components/Seller/CatalogManager";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
@@ -982,6 +983,7 @@ export default function AdminDashboard() {
       icon: "🗑",
       badge: deletionRequests.length,
     },
+    { id: "catalog", label: "Catalog", icon: "☷" },
   ];
 
   return (
