@@ -983,7 +983,7 @@ export default function AdminDashboard() {
       icon: "🗑",
       badge: deletionRequests.length,
     },
-    { id: "catalogs", label: "Catalog", icon: "☷", path: "/admin/catalog" },
+    { id: "catalog", label: "Catalog", icon: "☷" },
   ];
 
   return (
@@ -1835,9 +1835,11 @@ export default function AdminDashboard() {
               )}
             </div>
           )}
-          {activeTab === "catalogs" && (
+
+          {/* CATALOG */}
+          {activeTab === "catalog" && (
             <div className="fade-up">
-              <CatalogManager />
+              <CatalogManager showToast={showToast} />
             </div>
           )}
         </main>
