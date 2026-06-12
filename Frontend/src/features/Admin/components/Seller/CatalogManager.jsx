@@ -9,9 +9,13 @@ const CATEGORIES = ["mobile", "laptop", "tablet", "smartwatch", "television"];
 const token = () => localStorage.getItem("accessToken");
 
 async function apiFetch(path, opts = {}) {
+  const { headers: extraHeaders, ...restOpts } = opts;
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { Authorization: `Bearer ${token()}`, ...opts.headers },
-    ...opts,
+    ...restOpts,
+    headers: {
+      Authorization: `Bearer ${token()}`,
+      ...extraHeaders,  // ← was overwriting auth before
+    },
   });
   const d = await res.json();
   if (!res.ok) throw new Error(d.message || "Request failed");
