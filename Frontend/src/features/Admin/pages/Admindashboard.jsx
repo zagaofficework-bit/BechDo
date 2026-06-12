@@ -983,7 +983,7 @@ export default function AdminDashboard() {
       icon: "🗑",
       badge: deletionRequests.length,
     },
-    { id: "catalogs", label: "Catalog", icon: "☷" },
+    { id: "catalogs", label: "Catalog", icon: "☷", path: "/admin/catalog" },
   ];
 
   return (
